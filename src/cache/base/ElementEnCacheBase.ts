@@ -1,3 +1,6 @@
+/**
+ * Classe de base pour les éléments en cache.
+ */
 export abstract class ElementEnCache {
     private instancieTime: number;
 

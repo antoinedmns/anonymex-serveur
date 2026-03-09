@@ -13,6 +13,7 @@ export async function patchSession(id: string, data: Record<string, unknown>): P
 
     const dataParsees = UpdateSessionSchema.parse(data);
     await sessionCache.update(idSession, dataParsees);
+    sessionCache.get(idSession)?.fromData(dataParsees); // Mettre à jour le cache avec les nouvelles données
 
     return dataParsees;
 }
