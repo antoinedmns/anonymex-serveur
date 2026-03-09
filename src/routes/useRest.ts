@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { ZodError } from "zod";
 import { ErreurAccesRefuse, ErreurNonAuthentifie, ErreurRequeteInvalide, ErreurServeur } from "./erreursApi";
+import { ErreurBase } from "../core/ErreurBase";
 
 /**
  * Permet d'utiliser une fonction REST standardisée. Avec authentification et gestion des erreurs.
@@ -46,6 +47,8 @@ export function handleRestError(error: unknown, res: Response) {
         res.status(403).send(error.message ?? "Accès refusé");
     } else if (error instanceof ErreurServeur) {
         res.status(500).send(error.message ?? "Erreur serveur inconnue.");
+    } else if (error instanceof ErreurBase) {
+        res.status(500).send((error.name ?? "Erreur inconnue") + " : " + error.message);
     } else {
         console.error(error);
         res.status(500).send("Erreur serveur inconnue.");

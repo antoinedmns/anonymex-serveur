@@ -1,5 +1,5 @@
-import { ElementEnCache } from "../../base/ElementEnCacheBase";
 import { APIRole } from "../../../contracts/roles";
+import { ElementEnCacheBdd } from "../../base/ElementEnCacheBdd";
 
 export enum RolePermissions {
     AUCUNE = 0, /* Accès à la plateforme refusé */
@@ -18,7 +18,7 @@ export interface RoleData {
     permissions: number; /* Bitmask */
 }
 
-export class Role extends ElementEnCache {
+export class Role extends ElementEnCacheBdd<RoleData> {
     public id: number;
     public nom: string;
     public permissions: number; /* Bitmask */
@@ -28,6 +28,13 @@ export class Role extends ElementEnCache {
         this.id = data.id_role;
         this.nom = data.nom;
         this.permissions = data.permissions;
+    }
+
+    public fromData(data: Partial<RoleData>): this {
+        if (data.id_role !== undefined) this.id = data.id_role;
+        if (data.nom !== undefined) this.nom = data.nom;
+        if (data.permissions !== undefined) this.permissions = data.permissions;
+        return this;
     }
 
     /**
