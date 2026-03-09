@@ -9,46 +9,37 @@ jest.mock("../../src/cache/utilisateurs/roles/RoleCache", () => ({
 }));
 
 describe('deleteRole', () => {
-    
+
     afterEach(() => {
         jest.clearAllMocks();
     });
 
+    describe('Cas d\'erreurs', () => {
+        it("doit lever une ErreurRequeteInvalide si le roleId n'est pas valide (undefined, non-nombre, vide).", async () => {
+            await expect(deleteRole(undefined!)).rejects.toThrow(ErreurRequeteInvalide);
+            await expect(deleteRole(undefined!)).rejects.toThrow("L'ID de rôle n'est pas valide.");
 
-    // Tests des erreurs de deleteRole.
+            await expect(deleteRole('abc')).rejects.toThrow(ErreurRequeteInvalide);
+            await expect(deleteRole('abc')).rejects.toThrow("L'ID de rôle n'est pas valide.");
 
-    it("doit lever une ErreurRequeteInvalide si le roleId n'est pas défini.", async () => {
-        await expect(deleteRole(undefined!)).rejects.toThrow(ErreurRequeteInvalide);
-        await expect(deleteRole(undefined!)).rejects.toThrow("L'ID de rôle n'est pas valide.");
+            await expect(deleteRole('')).rejects.toThrow(ErreurRequeteInvalide);
+            await expect(deleteRole('')).rejects.toThrow("L'ID de rôle n'est pas valide.");
+        });
     });
 
-    it("doit lever une ErreurRequeteInvalide si le roleId n'est pas un nombre.", async () => {
-        await expect(deleteRole('abc')).rejects.toThrow(ErreurRequeteInvalide);
-        await expect(deleteRole('abc')).rejects.toThrow("L'ID de rôle n'est pas valide.");
-    });
+    describe('Cas de succès', () => {
+        it("doit retourner success: true si une ligne a été affectée.", async () => {
+            (roleCache.delete as jest.Mock).mockResolvedValue({ affectedRows: 1 });
 
-    it("doit lever une ErreurRequeteInvalide si le roleId est une chaine vide.", async () => {
-        await expect(deleteRole('')).rejects.toThrow(ErreurRequeteInvalide);
-        await expect(deleteRole('')).rejects.toThrow("L'ID de rôle n'est pas valide.");
-    });
-
-    // Tests des succès de deleteRole.
-
-    it("doit retourner success: true si une ligne a été affectée.", async () => {
-        (roleCache.delete as jest.Mock).mockResolvedValue({ affectedRows : 1 });
-
-        const resultat = await deleteRole('1');
-
-        expect(roleCache.delete).toHaveBeenCalledWith(1);
-        expect(resultat).toEqual({ success: true});
-    });
+            await expect(deleteRole('1')).resolves.toEqual({ success: true });
+            expect(roleCache.delete).toHaveBeenCalledWith(1);
+        });
 
         it("doit retourner success: false si aucune ligne n'a été affectée.", async () => {
-        (roleCache.delete as jest.Mock).mockResolvedValue({ affectedRows : 0 });
+            (roleCache.delete as jest.Mock).mockResolvedValue({ affectedRows: 0 });
 
-        const resultat = await deleteRole('999');
-
-        expect(roleCache.delete).toHaveBeenCalledWith(999);
-        expect(resultat).toEqual({ success: false});
+            await expect(deleteRole('999')).resolves.toEqual({ success: false });
+            expect(roleCache.delete).toHaveBeenCalledWith(999);
+        });
     });
-})
+});
