@@ -13,7 +13,7 @@ type Pt = [number, number];
  * @param detectionsCibles cibles detectées
  * @param contours tous les contours détectés
  */
-export async function visualiserGeometrieCibles(image: sharp.Sharp, detectionsCibles: Array<null | CibleConcentriqueDetection>, contours: MatVector): Promise<void> {
+export async function visualiserGeometrieCibles(image: sharp.Sharp, detectionsCibles: (null | CibleConcentriqueDetection)[], contours: MatVector): Promise<void> {
     const canvas = await sharp2canvas(image);
     const ctx = canvas.getContext("2d");
 
@@ -26,12 +26,12 @@ export async function visualiserGeometrieCibles(image: sharp.Sharp, detectionsCi
         if (contour.rows > 0) {
             ctx.beginPath();
             for (let j = 0; j < contour.rows; j++) {
-                const pointData = contour.data32S[j * 2]!; // x
-                const pointDataY = contour.data32S[j * 2 + 1]!; // y
+                const pointData = contour.data32S[j * 2]; // x
+                const pointDataY = contour.data32S[j * 2 + 1]; // y
                 if (j === 0) {
-                    ctx.moveTo(pointData, pointDataY);
+                    ctx.moveTo(pointData ?? 0, pointDataY ?? 0);
                 } else {
-                    ctx.lineTo(pointData, pointDataY);
+                    ctx.lineTo(pointData ?? 0, pointDataY ?? 0);
                 }
             }
             ctx.closePath();

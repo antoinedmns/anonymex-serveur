@@ -14,6 +14,6 @@ utilisateursRouter.get("/", (req, res) => useRest(getUtilisateurs, req, res));
 // PATCH /utilisateurs/:id/
 utilisateursRouter.patch("/:id", (req, res) => useRest(patchUtilisateur, req, res));
 // DELETE /utilisateurs/:id/
-utilisateursRouter.delete("/:id", (req, res) => useRest(deleteUtilisateur, req, res));
+utilisateursRouter.delete("/:id", (req, res) => useRest(() => deleteUtilisateur(req.params.id), req, res));
 
 export { utilisateursRouter as utilisateursRouter };

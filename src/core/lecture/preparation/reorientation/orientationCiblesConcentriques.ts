@@ -18,7 +18,7 @@ const ARRANGEMENTS_ORIENTATION = [
  * @param detectionsCibles Liste des détections de cibles concentriques, dans l'ordre des coins standard (HG, HD, BG, BD).
  * @returns L'angle de rotation à appliquer (en degrés). -1 si confiance insuffisante ou cibles illisibles.
  */
-export function orientationCiblesConcentriques(detectionsCibles: Array<null | CibleConcentriqueDetection>): number {
+export function orientationCiblesConcentriques(detectionsCibles: (null | CibleConcentriqueDetection)[]): number {
 
     // Supprimer les cibles doublons (2 fois le même coin = problème de lecture)
     const detectionsUniques: CibleConcentriqueDetection[] = [];
@@ -42,8 +42,8 @@ export function orientationCiblesConcentriques(detectionsCibles: Array<null | Ci
 
         // Chercher un arrangement correspondant
         for (let i = 0; i < ARRANGEMENTS_ORIENTATION.length; i++) {
-            const arrangement = ARRANGEMENTS_ORIENTATION[i]!;
-            if (arrangement[coinIndex] === detection.rings) {
+            const arrangement = ARRANGEMENTS_ORIENTATION[i];
+            if (arrangement && arrangement[coinIndex] === detection.rings) {
                 if (orientationPrecedente === i * 90) {
                     // angle validé par au moins deux cibles consécutives
                     return i * 90;

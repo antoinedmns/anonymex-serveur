@@ -1,4 +1,5 @@
 import { mmToPoints } from "../../../utils/pdfUtils";
+import { ErreurCibleConcentrique } from "../generationErreurs";
 
 /** Nombre de cercles concentriques pour chaque cible en fonction du coin (HG, HD, BG, BD) */
 export const CIBLES_NB_RINGS = [4, 2, 3, 1]; // HG, HD, BG, BD
@@ -23,7 +24,9 @@ export function genererCiblesConcentriques(doc: PDFKit.PDFDocument, tailleMm: nu
 
     for (const pos of positions) {
         const index = positions.indexOf(pos);
-        const nbRings = CIBLES_NB_RINGS[index]!;
+        const nbRings = CIBLES_NB_RINGS[index];
+        if (!nbRings) throw new ErreurCibleConcentrique("ID de cible concentrique non défini pour le coin " + index);
+
         const ringThickness = taille / (2 * nbRings); // Chaque anneau a une épaisseur égale
 
         for (let i = 0; i < nbRings; i++) {

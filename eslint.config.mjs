@@ -16,6 +16,7 @@ export default defineConfig(
     rules: {
       "@typescript-eslint/no-extraneous-class": "off",
       "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/prefer-literal-enum-member": "off",
     },
   }
 );

@@ -3,7 +3,7 @@ import { Session, SessionData } from "./Session";
 
 export class SessionCache extends DatabaseCacheBase<number /*id*/, Session, SessionData> {
 
-    nomTable: string = "session_examen";
+    nomTable = "session_examen";
     colonnesClePrimaire: string[] = ["id_session"];
 
     fromDatabase(data: SessionData): Session {

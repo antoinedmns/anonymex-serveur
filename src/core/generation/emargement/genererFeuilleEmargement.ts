@@ -9,7 +9,6 @@ import { sessionCache } from "../../../cache/sessions/SessionCache";
 import { Session } from "../../../cache/sessions/Session";
 import { Epreuve } from "../../../cache/epreuves/Epreuve";
 import { renduEnteteTableauEmargement, renduLigneEmargement, renduTableauEmargement } from "./renduTableauEmargement";
-import { Etudiant } from "../../../cache/etudiants/Etudiant";
 import { renduPiedPageEmargement } from "./renduPiedPageEmargement";
 
 const LIGNES_PAR_PAGE = 29;
@@ -94,11 +93,13 @@ function renduPageEmargement(doc: typeof PDFDocument, noms: [string, string][], 
     // Lignes horizontales et noms
     doc.fontSize(12);
     for (let i = 0; i < noms.length; i++) {
+        const nom = noms[i];
+        if (!nom) continue;
 
         // Rendu de chaque ligne
         const yDebut = mmToPoints(positionYDepartMm + i * hauteurLigneMm);
         const numeroEtu = '22300' + Math.round((Math.random() * 999)).toString().padStart(3, '0');
-        renduLigneEmargement(doc, i, margesGauche, yDebut, largeurContenu, mmToPoints(hauteurLigneMm), noms[i]![1], noms[i]![0], numeroEtu);
+        renduLigneEmargement(doc, i, margesGauche, yDebut, largeurContenu, mmToPoints(hauteurLigneMm), nom[1], nom[0], numeroEtu);
 
     }
 

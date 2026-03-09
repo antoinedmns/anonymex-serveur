@@ -3,7 +3,7 @@ import { ScanData } from "../extraireScans";
 import { APRILTAGS_IDS } from "../../../generation/common/genererAprilTags";
 import { ErreurAlignement } from "../../lectureErreurs";
 
-type TagDistance = { id: number, distance: number };
+interface TagDistance { id: number, distance: number }
 
 const ARRANGEMENTS_ORIENTATION = [
     [0, 1, 2, 3], // 0°
@@ -34,7 +34,8 @@ export function orientationAprilTags(scan: ScanData, detections: AprilTagDetecti
     const tagParCoin: (TagDistance | null)[] = [];
 
     for (let i = 0; i < coins.length; i++) {
-        const coin = coins[i]!;
+        const coin = coins[i];
+        if (!coin) continue;
 
         for (const detection of detections) {
 
@@ -43,7 +44,7 @@ export function orientationAprilTags(scan: ScanData, detections: AprilTagDetecti
             const dy = Math.abs(detection.center[1] - coin.y);
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            if (!tagParCoin[i] || distance < tagParCoin[i]!.distance) {
+            if (!tagParCoin[i] || distance < (tagParCoin[i]?.distance ?? Infinity)) {
                 tagParCoin[i] = { id: detection.id, distance };
             }
         }
@@ -72,7 +73,8 @@ export function orientationAprilTags(scan: ScanData, detections: AprilTagDetecti
     // Un coin null signifie que le tag est illisible ou incorrect, il n'invalide pas l'arrangement
     let orientationTrouvee = null;
     for (let orientation = 0; orientation < ARRANGEMENTS_ORIENTATION.length; orientation++) {
-        const arrangementAttendu = ARRANGEMENTS_ORIENTATION[orientation]!;
+        const arrangementAttendu = ARRANGEMENTS_ORIENTATION[orientation];
+        if (!arrangementAttendu) continue;
 
         // Vérifier la correspondance coin par coin
         for (let i = 0; i < tagParCoin.length; i++) {
@@ -93,8 +95,10 @@ export function orientationAprilTags(scan: ScanData, detections: AprilTagDetecti
 
     // Construire l'ordre des tags, égal à ARRANGEMENTS_ORIENTATION[0], mais en maintenant les valeurs nulles
     // On prend l'orientation à 0° car on assume que le document est réorienté correctement
-    let ordreTags = ARRANGEMENTS_ORIENTATION[0]!.map((id) =>
-        tagParCoin.find(t => t?.id === id) ? id! : null // id si coin existe, sinon null
+    if (!ARRANGEMENTS_ORIENTATION[0]) throw new ErreurAlignement("Erreur interne : préarrangement des april tags non défini ou invalide.");
+
+    const ordreTags = ARRANGEMENTS_ORIENTATION[0].map((id) =>
+        tagParCoin.find(t => t?.id === id) ? id ?? null : null // id si coin existe, sinon null
     );
 
     return { orientation: orientationTrouvee * 90, ordreTags };

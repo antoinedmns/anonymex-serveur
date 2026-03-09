@@ -1,8 +1,7 @@
 import { ElementEnCache } from "../base/ElementEnCacheBase";
-import { RowData } from "../../core/services/database/Database";
 import { APIIncident } from "../../contracts/incidents";
 
-export interface IncidentData extends RowData {
+export interface IncidentData {
     id_incident: number;
     id_session: number;
     code_epreuve: string;

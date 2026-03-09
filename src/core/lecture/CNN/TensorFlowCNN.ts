@@ -79,7 +79,7 @@ export class TensorFlowCNN {
      */
     private static async ensureModel(modele: TypesModeles): Promise<tf.LayersModel> {
         if (this.modeles[modele]) {
-            return this.modeles[modele]!;
+            return this.modeles[modele];
         }
 
         if (!this.promessesChargement[modele]) {
@@ -100,7 +100,7 @@ export class TensorFlowCNN {
                 });
         }
 
-        return this.promessesChargement[modele]!;
+        return this.promessesChargement[modele];
     }
 
     /**
@@ -154,8 +154,10 @@ export class TensorFlowCNN {
         let bestValue = Number.NEGATIVE_INFINITY;
 
         for (let i = 0; i < probabilities.length; i += 1) {
-            if (probabilities[i]! > bestValue) {
-                bestValue = probabilities[i]!;
+            const prob = probabilities[i];
+            if (prob === undefined) continue;
+            if (prob > bestValue) {
+                bestValue = prob;
                 bestIndex = i;
             }
         }

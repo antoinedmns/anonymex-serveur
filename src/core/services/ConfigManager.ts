@@ -40,7 +40,7 @@ export class ConfigManager {
             const data = readFileSync(join(__dirname, "..", "..", "..", "config", ".configCachee.json"), "utf-8");
             this.configCachee = JSON.parse(data) as ConfigCachee;
             return this.configCachee;
-        } catch (err) {
+        } catch {
             return undefined;
         }
     }

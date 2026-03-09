@@ -1,4 +1,4 @@
-import { literal, object, z } from "zod";
+import { z } from "zod";
 
 // --- Schémas ---
 export const IncidentSchema = z.object({
@@ -13,7 +13,7 @@ export const IncidentSchema = z.object({
 });
 
 export const ListIncidentsSchema = z.object({
-    incidents: z.array(IncidentSchema.pick({idIncident: true, titre: true, details: true, resolu: true}))
+    incidents: z.array(IncidentSchema.pick({ idIncident: true, titre: true, details: true, resolu: true }))
 });
 
 // --- Types ---

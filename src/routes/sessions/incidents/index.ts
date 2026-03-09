@@ -3,11 +3,14 @@ import { useRest } from "../../useRest";
 import { getIncident } from "./getIncident";
 import { getIncidents } from "./getIncidents";
 
-const incidentsRouter = Router();
+const incidentsRouter = Router({ mergeParams: true });
 
 // GET /sessions/:session/incidents/:id/
-incidentsRouter.get("/:id", (req, res) => useRest(getIncident, req, res));
+incidentsRouter.get<{ session: string, id: string }>("/:id", (req, res) =>
+    useRest(() => getIncident(req.params.session, req.params.id), req, res));
+
 // GET /sessions/:session/incidents/
-incidentsRouter.get("/", (req, res) => useRest(getIncidents, req, res));
+incidentsRouter.get<{ session: string }>("/", (req, res) =>
+    useRest(() => getIncidents(), req, res));
 
 export { incidentsRouter };

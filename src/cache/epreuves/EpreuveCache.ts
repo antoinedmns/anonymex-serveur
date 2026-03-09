@@ -3,7 +3,7 @@ import { Epreuve, EpreuveData } from "./Epreuve";
 
 export class EpreuveCache extends DatabaseCacheBase<string /*code*/, Epreuve, EpreuveData> {
 
-    nomTable: string = "epreuve";
+    nomTable = "epreuve";
     colonnesClePrimaire: string[] = ["id_session", "code_epreuve"];
 
     /**

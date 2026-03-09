@@ -1,7 +1,6 @@
-import { Request, Response } from "express";
-import { APIIncident, APIListIncidents } from "../../../contracts/incidents";
+import { APIListIncidents } from "../../../contracts/incidents";
 
-export async function getIncidents(req: Request): Promise<APIListIncidents> {
+export async function getIncidents(): Promise<APIListIncidents> {
 
     return ({
         incidents: [

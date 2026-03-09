@@ -1,9 +1,6 @@
 import sharp from "sharp";
 import { Mat } from "@techstark/opencv-js";
-import { detecterAprilTags } from "./detecterAprilTags";
 import { ScanData } from "./extraireScans";
-import { orientationAprilTags } from "./reorientation/orientationAprilTags";
-import { ErreurDetectionAprilTags } from "../lectureErreurs";
 import { realignerCorrigerScan } from "./realignerCorrigerScan";
 import { detecterCiblesConcentriques } from "./detecterCiblesConcentriques";
 import { orientationCiblesConcentriques } from "./reorientation/orientationCiblesConcentriques";
@@ -27,6 +24,7 @@ export async function preparerScan(scanProps: ScanData, buffer: Uint8ClampedArra
     }) : sharp(buffer);
 
     // Libérer la mémoire du scan brut
+    // eslint-disable-next-line no-useless-assignment
     buffer = new Uint8Array(0);
 
     const detectionCibles = await detecterCiblesConcentriques(scanProps, scan, { tailleCibleMm: 8 });

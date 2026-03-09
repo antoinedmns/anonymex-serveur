@@ -8,7 +8,7 @@ import { EtapeLecture, etapesDeLecture } from './EtapesDeTraitementDicts';
  */
 export class LecturePipelineDebug {
 
-    private static actif: boolean = true; // TODO: désactiver par défaut en prod
+    private static actif = true; // TODO: désactiver par défaut en prod
 
     public static isActif(): boolean {
         return this.actif;
@@ -28,7 +28,7 @@ export class LecturePipelineDebug {
      */
     public static async enregistrerImageDebugRaw(etapeLecture: EtapeLecture, imageBuffer: Uint8Array | Uint8ClampedArray, width: number, height: number, channels: 1 | 3 | 4): Promise<void> {
         if (!this.actif) return;
-        const [_, filePath] = await this.getInfosSauvegarde(etapeLecture);
+        const [, filePath] = await this.getInfosSauvegarde(etapeLecture);
         await sharp(imageBuffer, {
             raw: {
                 width,
@@ -45,7 +45,7 @@ export class LecturePipelineDebug {
      */
     public static async enregistrerImageDebug(etapeLecture: EtapeLecture, imageBuffer: Buffer): Promise<void> {
         if (!this.actif) return;
-        const [_, filePath] = await this.getInfosSauvegarde(etapeLecture);
+        const [, filePath] = await this.getInfosSauvegarde(etapeLecture);
         await sharp(imageBuffer)
             .jpeg()
             .toFile(filePath);
@@ -62,7 +62,7 @@ export class LecturePipelineDebug {
         await fsPromises.mkdir(debugDir, { recursive: true });
 
         // Infos de l'étape
-        const [numeroEtape, nomEtape, nomFichier] = etapesDeLecture[etapeLecture];
+        const [numeroEtape, , nomFichier] = etapesDeLecture[etapeLecture];
         const filePath = path.join(debugDir, `${numeroEtape.toString().padStart(2, '0')}_${nomFichier}.jpg`);
 
         return [numeroEtape, filePath];

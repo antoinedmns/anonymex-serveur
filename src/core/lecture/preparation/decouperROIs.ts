@@ -57,7 +57,8 @@ export async function decouperROIs(
     const paddingMm = options.paddingMm ?? -0.1;
 
     for (let roiIndex = 0; roiIndex < rois.length; roiIndex++) {
-        const roi = rois[roiIndex]!;
+        const roi = rois[roiIndex];
+        if (!roi) continue;
 
         // Coordonnées converties en pixels du rectangle à découper
         const x = (toMm(roi.x) - marges.left + 0.5) * pxPerMmX;

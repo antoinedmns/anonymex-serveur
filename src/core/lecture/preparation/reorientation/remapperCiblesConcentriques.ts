@@ -16,7 +16,7 @@ const TABLEAU_MUTATION_COIN = [
  * @param height hauteur image
  * @returns Nouvelles détections avec ordre remappé.
  */
-export function remapperCiblesConcentriques(detections: Array<null | CibleConcentriqueDetection>, orientation: number, width: number, height: number): Array<null | CibleConcentriqueDetection> {
+export function remapperCiblesConcentriques(detections: (null | CibleConcentriqueDetection)[], orientation: number, width: number, height: number): (null | CibleConcentriqueDetection)[] {
     if (orientation % 90 !== 0) {
         throw new ErreurAlignement("L'orientation doit être un multiple de 90° pour le remapping des détections.");
     }
@@ -26,7 +26,7 @@ export function remapperCiblesConcentriques(detections: Array<null | CibleConcen
         return detections; // Pas de remapping nécessaire
     }
 
-    const remappedDetections: Array<null | CibleConcentriqueDetection> = [null, null, null, null];
+    const remappedDetections: (null | CibleConcentriqueDetection)[] = [null, null, null, null];
 
     for (const detection of detections) {
         if (detection === null) continue;

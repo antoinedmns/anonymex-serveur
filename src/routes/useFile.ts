@@ -1,7 +1,7 @@
 import busboy from 'busboy';
 import express from 'express';
 
-interface Fichier {
+export interface Fichier {
     fieldname: string;
     originalname: string;
     encoding: string;

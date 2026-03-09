@@ -1,5 +1,5 @@
 import { ResultSetHeader } from "mysql2";
-import { Database, RowData } from "../../core/services/database/Database";
+import { Database } from "../../core/services/database/Database";
 import { CacheBase } from "./CacheBase";
 import { ElementEnCache } from "./ElementEnCacheBase";
 
@@ -16,7 +16,7 @@ import { ElementEnCache } from "./ElementEnCacheBase";
  * @template T Le type des données mises en cache.
  * @template D Le type des données telles qu'elles sont stockées dans la base de données (brut, avant transformation en T).
  */
-export abstract class DatabaseCacheBase<I extends string | number, T extends ElementEnCache, D extends RowData> extends CacheBase<I, T> {
+export abstract class DatabaseCacheBase<I extends string | number, T extends ElementEnCache, D> extends CacheBase<I, T> {
 
     /** Nom de la table associée */
     abstract nomTable: string;
@@ -29,7 +29,7 @@ export abstract class DatabaseCacheBase<I extends string | number, T extends Ele
     protected readonly valeursComposantesParent: (string | number)[] | undefined;
 
     /** Tous les éléments ont-ils été récupérés depuis la BDD? */
-    private tousRecuperes: boolean = false;
+    private tousRecuperes = false;
 
     /** Fonction de D vers T, c'est à dire d'un objet de la BDD en une instance de T */
     abstract fromDatabase(data: D): T;
@@ -65,9 +65,9 @@ export abstract class DatabaseCacheBase<I extends string | number, T extends Ele
 
             // Requête
             const results = await Database.query<D>(sql, valeursPK);
-            if (results.length > 0) {
+            if (results[0] !== undefined) {
                 // Transformer en élément et le mettre en cache
-                element = this.fromDatabase(results[0]!);
+                element = this.fromDatabase(results[0]);
                 this.set(this.getComposanteCache(element), element);
             }
         }
@@ -82,7 +82,7 @@ export abstract class DatabaseCacheBase<I extends string | number, T extends Ele
      * @param force Si true, tous les éléments seront récupérés, même s'ils sont déjà en cache.
      * @cache Tous les éléments récupérés sont mis en cache.
      */
-    public async getAll(clause?: string, force: boolean = false): Promise<T[]> {
+    public async getAll(clause?: string, force = false): Promise<T[]> {
         if (this.tousRecuperes && !force) {
             // Tous les éléments ont déjà été récupérés; retourner ceux en cache
             return this.values();
@@ -172,7 +172,7 @@ export abstract class DatabaseCacheBase<I extends string | number, T extends Ele
     public async count(): Promise<number> {
         const sql = `SELECT COUNT(*) AS count FROM \`${this.nomTable}\`;`;
         const results = await Database.query<{ count: number }>(sql);
-        return results[0]!.count;
+        return results[0]?.count ?? 0;
     }
 
     /**

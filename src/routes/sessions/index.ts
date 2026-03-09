@@ -19,12 +19,12 @@ sessionsRouter.use("/:session/incidents", incidentsRouter);
 // GET /sessions/
 sessionsRouter.get("/", (req, res) => useRest(getSessions, req, res));
 // POST /sessions/
-sessionsRouter.post("/", (req, res) => useRest(postSession, req, res));
+sessionsRouter.post("/", (req, res) => useRest(() => postSession(req.body), req, res));
 // POST /sessions/importer/:id
-sessionsRouter.post("/:id/importer/", (req, res) => useRest(postImporterFichierSession, req, res));
+sessionsRouter.post("/:id/importer/", (req, res) => useRest(() => postImporterFichierSession(req.params.id, req.body.fichiers), req, res));
 // DELETE /sessions/:id/
-sessionsRouter.delete("/:id", (req, res) => useRest(deleteSession, req, res));
+sessionsRouter.delete("/:id", (req, res) => useRest(() => deleteSession(req.params.id), req, res));
 // PATCH /sessions/:id/
-sessionsRouter.patch("/:id", (req, res) => useRest(patchSession, req, res));
+sessionsRouter.patch("/:id", (req, res) => useRest(() => patchSession(req.params.id, req.body), req, res));
 
 export { sessionsRouter as sessionsRouter };

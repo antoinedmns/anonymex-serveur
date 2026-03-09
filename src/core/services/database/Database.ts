@@ -6,7 +6,7 @@ import { ConfigManager } from "../ConfigManager";
 import config from "../../../../config/config.json";
 import { Transaction } from "./Transaction";
 
-export type QueryValue = string | number | null | boolean | Date | Buffer;
+export type QueryValue = string | number | null | boolean | Date | Buffer | unknown;
 export type RowData = Record<string, QueryValue>;
 
 /**
@@ -53,14 +53,14 @@ export class Database {
      * @param sql Requête SQL.
      * @param params paramètres de la requête 
      */
-    public static async query<T extends Record<string, QueryValue>>(sql: string, params?: QueryValue[]): Promise<T[]> {
+    public static async query<T>(sql: string, params?: QueryValue[]): Promise<T[]> {
         const pool = await this.connexion();
         return new Promise<T[]>((resolve, reject) => {
             pool.query<(RowDataPacket & T)[]>(sql, params, (err, results) => {
                 if (err) {
                     reject(err);
                 } else {
-                    resolve(results);
+                    resolve(results as T[]);
                 }
             });
         });
@@ -71,7 +71,7 @@ export class Database {
      * @param sql Requête SQL.
      * @param params paramètres de la requête
      */
-    public static async execute(sql: string, params?: QueryValue[]): Promise<ResultSetHeader> {
+    public static async execute(sql: string, params?: unknown[]): Promise<ResultSetHeader> {
         const pool = await this.connexion();
         return new Promise<ResultSetHeader>((resolve, reject) => {
             pool.execute<ResultSetHeader>(sql, params, (err, results) => {

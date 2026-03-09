@@ -5,7 +5,7 @@ import { EtapeLecture } from "./EtapesDeTraitementDicts";
  */
 export class StatistiquesDebug {
 
-    private static tempsExecLectureStats: Map<EtapeLecture, TempsExecStats> = new Map();
+    private static tempsExecLectureStats = new Map<EtapeLecture, TempsExecStats>();
 
     /**
      * Ajoute une mesure de temps d'exécution pour une étape de lecture donnée.
@@ -13,18 +13,20 @@ export class StatistiquesDebug {
      * @param tempsMs Le temps d'exécution en millisecondes
      */
     public static ajouterTempsExecution(etapeLecture: EtapeLecture, tempsMs: number): void {
-        if (!this.tempsExecLectureStats.has(etapeLecture)) {
+        const stats = this.tempsExecLectureStats.get(etapeLecture);
+        if (stats === undefined) {
             this.tempsExecLectureStats.set(etapeLecture, new TempsExecStats());
+        } else {
+            stats.ajouterExecution(tempsMs);
         }
-        this.tempsExecLectureStats.get(etapeLecture)!.ajouterExecution(tempsMs);
     }
 
 }
 
 class TempsExecStats {
-    private tempsTotalMs: number = 0;
-    private nombreExecutions: number = 0;
-    private plusLongueMs: number = 0;
+    private tempsTotalMs = 0;
+    private nombreExecutions = 0;
+    private plusLongueMs = 0;
 
     ajouterExecution(tempsMs: number): void {
         this.tempsTotalMs += tempsMs;

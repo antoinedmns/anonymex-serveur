@@ -5,7 +5,7 @@ export enum EtapeLecture {
     CORRIGER_REALIGNER_SCAN
 }
 
-export const etapesDeLecture: { [key in EtapeLecture]: [number, string, string] } = {
+export const etapesDeLecture: Record<EtapeLecture, [number, string, string]> = {
     // Clé: [Numéro d'étape, Nom de l'étape, Nom du fichier enregistré]
     [EtapeLecture.EXTRACTION_SCAN]: [0, 'Extraction des scans', 'extraction_scan'],
     [EtapeLecture.DETECTION_CIBLES]: [1, 'Détection des Cibles', 'detection_cibles'],

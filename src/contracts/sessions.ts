@@ -17,7 +17,7 @@ export const SessionSchema = z.object({
 
 export const NewSessionSchema = SessionSchema.omit({ id: true, statut: true });
 
-export const UpdateSessionSchema = SessionSchema.partial();
+export const UpdateSessionSchema = SessionSchema.partial().omit({ id: true });
 
 export const ListSessionsSchema = z.object({
     anneeMax: z.number().int(),

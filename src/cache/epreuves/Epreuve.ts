@@ -2,10 +2,9 @@ import { ElementEnCache } from "../base/ElementEnCacheBase";
 import { Session } from "../sessions/Session";
 import { sessionCache } from "../sessions/SessionCache";
 import { APIEpreuve, EpreuveStatut } from "../../contracts/epreuves";
-import { RowData } from "../../core/services/database/Database";
 import { ConvocationCache } from "../convocations/ConvocationCache";
 
-export interface EpreuveData extends RowData {
+export interface EpreuveData {
     id_session: number,
     code_epreuve: string,
     nom: string,
@@ -24,10 +23,10 @@ export class Epreuve extends ElementEnCache {
     public salles: string[] = [];//todo
     public dateEpreuve: number;
     public duree: number;
-    public copies: number = 0;//todo
+    public copies = 0;//todo
     public nbPresents: number | null;
-    public incidents: number = 0;//todo
-    
+    public incidents = 0;//todo
+
     /** Cache des convocations associées à cette épreuve */
     public convocations: ConvocationCache;
 

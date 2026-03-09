@@ -4,8 +4,8 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { pdfToBuffer } from './conversion/pdfToBuffer';
 import { imgToBuffer } from './conversion/imgToBuffer';
 
-export type DocumentSource = { data: Uint8Array; encoding: string; mimeType: string };
-export type ScanData = { channels: 1 | 3 | 4; debug: boolean; width: number; height: number; raw: boolean };
+export interface DocumentSource { data: Uint8Array; encoding: string; mimeType: string }
+export interface ScanData { channels: 1 | 3 | 4; debug: boolean; width: number; height: number; raw: boolean }
 
 /**
  * Extrait le/les scan(s) d'un document source prêts à la lecture.
@@ -19,7 +19,7 @@ export async function extraireScans(doc: DocumentSource, onScanExtrait: (scan: S
 
     // Convertir le document source en scans prêts à la lecture
     switch (doc.mimeType) {
-        case 'application/pdf':
+        case 'application/pdf': {
             // Charger le document PDF
             const pdf = await getDocument(doc.data).promise;
             const nbPages = Math.min(pdf.numPages, lirenb ?? pdf.numPages);
@@ -30,15 +30,17 @@ export async function extraireScans(doc: DocumentSource, onScanExtrait: (scan: S
                 await onScanExtrait(...await pdfToBuffer(pdf, pageNum));
             }
             break;
+        }
 
         case 'image/jpeg':
         case 'image/png':
-        case 'image/tiff':
+        case 'image/tiff': {
             // Traiter l'image unique
             logInfo('extraireScans', `Extraction du scan de l'image source.`);
             const scan = await imgToBuffer(doc);
             await onScanExtrait(scan, doc.data);
             break;
+        }
 
         default:
             throw new ErreurDocumentSource(`Type de document source non supporté : ${doc.mimeType}`);

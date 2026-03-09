@@ -1,9 +1,8 @@
 import PDFDocument from 'pdfkit';
-import { Etudiant } from '../../../cache/etudiants/Etudiant';
 import { mmToPoints, tronquerTexte } from '../../../utils/pdfUtils';
 import { genererAprilTag } from '../common/genererAprilTags';
 
-type ColonneTableau = { titre: string, largeurPourcent: number };
+interface ColonneTableau { titre: string, largeurPourcent: number }
 
 const COLONNES_TABLEAU = [
     { titre: '', largeurPourcent: 4 },

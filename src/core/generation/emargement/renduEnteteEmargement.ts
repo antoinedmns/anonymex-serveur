@@ -11,8 +11,9 @@ export function renduEnteteEmargement(doc: typeof PDFDocument, epreuve: Epreuve,
 
     // Première/dernière lettres
     doc.font('Helvetica');
+    const [premierNom, dernierNom] = [noms[0], noms[noms.length - 1]];
     const xDebutLettres = marges.gauche + 10;
-    const lettresAfficher = noms.length > 0 ? `${noms[0]![1].charAt(0).toUpperCase()}-${noms[noms.length - 1]![1].charAt(0).toUpperCase()}` : '';
+    const lettresAfficher = premierNom && dernierNom ? `${premierNom[1].charAt(0).toUpperCase()}-${dernierNom[1].charAt(0).toUpperCase()}` : '';
     doc.text(lettresAfficher, xDebutLettres, titresY, { align: 'left', baseline: 'middle' });
 
     // Titre (centré)
@@ -30,7 +31,7 @@ export function renduEnteteEmargement(doc: typeof PDFDocument, epreuve: Epreuve,
     // Infos épreuve (centré, sous le titre)
     doc.font('Helvetica');
     doc.fontSize(13);
-    const nomEpreuve = epreuve.nom.length > 0 ? epreuve.nom[0]!.toUpperCase() + epreuve.nom.slice(1).toLowerCase() : 'Épreuve';
+    const nomEpreuve = epreuve.nom[0] !== undefined ? epreuve.nom[0].toUpperCase() + epreuve.nom.slice(1).toLowerCase() : 'Épreuve';
     const infosTexte = `${epreuve.codeEpreuve} - ${nomEpreuve}`;
     const infosLargeur = doc.widthOfString(infosTexte, { lineBreak: false });
     doc.text(infosTexte, (doc.page.width - infosLargeur) / 2, titresY + 14, { baseline: 'middle' });

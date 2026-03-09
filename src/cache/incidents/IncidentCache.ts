@@ -3,7 +3,7 @@ import { Incident, IncidentData } from "./Incident";
 
 export class EpreuveCache extends DatabaseCacheBase<number /*id*/, Incident, IncidentData> {
 
-    nomTable: string = "incident";
+    nomTable = "incident";
     colonnesClePrimaire: string[] = ["id_session","id_incident"];
 
     /**

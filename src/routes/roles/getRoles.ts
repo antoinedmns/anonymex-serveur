@@ -1,40 +1,18 @@
-import { Request, Response } from "express";
-import { APIRole, APIListRoles } from "../../contracts/roles";
-import { roleCache } from "../../cache/utilisateurs/roles/RoleCache";
+import { APIListRoles, APIRole } from "../../contracts/roles";
 import { ErreurRequeteInvalide } from "../erreursApi";
+import { roleCache } from "../../cache/utilisateurs/roles/RoleCache";
 
-export async function getRoles(req: Request): Promise<APIListRoles> {
-    /*
+export async function getRoles(): Promise<APIListRoles> {
     const rolesBruts = await roleCache.getAll();
 
-    if(rolesBruts === undefined) {
+    if (rolesBruts === undefined) {
         throw new ErreurRequeteInvalide("La liste des rôles n'a pas pu être renvoyées.")
     }
 
     const rolesFormatees: APIRole[] = [];
-    for(const role of rolesBruts) {
+    for (const role of rolesBruts) {
         rolesFormatees.push(role.toJSON());
     }
 
     return { roles: rolesFormatees };
-    */
-    return {
-        roles: [
-            {
-                idRole: 1,
-                nom: "Administrateur",
-                permissions: 1
-            },
-            {
-                idRole: 2,
-                nom: "Scanner",
-                permissions: 2
-            },
-            {
-                idRole: 3,
-                nom: "Correcteur",
-                permissions: 32
-            }
-        ]
-    }
 }

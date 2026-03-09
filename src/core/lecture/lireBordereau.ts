@@ -22,8 +22,8 @@ let echecTotal = 0;
 let tempsTotalOCR = 0;
 let tempsTotalCNN = 0;
 let pageIndex = 0;
-let echecsParPage: number[] = [];
-let pagesImpossibles: number[] = [];
+const echecsParPage: number[] = [];
+const pagesImpossibles: number[] = [];
 const resultatOCRBenchmark: Record<string, number> = {}; // x: lettre correcte, y: lettre détectée, xy: nombre de fois (ex: AA: 5, AB: 2, ...)
 const resultatCNNBenchmark: Record<string, number> = {}; // idem, pour CNN
 const resultatTotal: Record<string, number> = {}; // idem, pour OCR + CNN
@@ -55,7 +55,7 @@ export async function lireBordereau(chemin: string, mimeType: MimeType): Promise
         const detections = await detecterAprilTags(scan, matToSharp(await OpenCvInstance.getInstance(), scanPret));
         const code = detections.sort((a, b) => a.center[0] - b.center[0]).map(d => String.fromCharCode(d.id));
 
-        let indexEchoues: number[] = []// indice des cases ayant échouées, pour savoir si une lecture avec redondance aurait été possible
+        const indexEchoues: number[] = []// indice des cases ayant échouées, pour savoir si une lecture avec redondance aurait été possible
 
         const onRoiExtrait = async (image: sharp.Sharp, index: number) => {
             const bufferImgTraitee = await preprocessPipelines
@@ -71,7 +71,7 @@ export async function lireBordereau(chemin: string, mimeType: MimeType): Promise
             //await preprocessPipelines.emnist(image).png().toFile('debug/rois/roi_emnist_' + index + '.png');
 
             const debutOCR = Date.now();
-            const { text, confidence } = await TesseractOCR.interroger(bufferImgTraitee);
+            const { text } = await TesseractOCR.interroger(bufferImgTraitee);
             tempsTotalOCR += (Date.now() - debutOCR);
 
             const debutCNN = Date.now();
@@ -88,10 +88,10 @@ export async function lireBordereau(chemin: string, mimeType: MimeType): Promise
             //console.log(`ROI ${index} : ${text.trim()} (${confidence.toFixed(2)}%) -- attendu : ${lettreAttendue}`);
             if (text.trim().toUpperCase() === lettreAttendue) { totalBon++; totalBonOCR++; }
             if (prediction.caractere === lettreAttendue) { totalBonCnn++; totalBon++; }
-            if (text.trim().toUpperCase() !== lettreAttendue && prediction.caractere !== lettreAttendue) {
+            if (lettreAttendue && text.trim().toUpperCase() !== lettreAttendue && prediction.caractere !== lettreAttendue) {
                 echecTotal++;
                 echecsParPage[pageIndex] = (echecsParPage[pageIndex] || 0) + 1;
-                jamaisReconnusLettres[lettreAttendue!] = (jamaisReconnusLettres[lettreAttendue!] || 0) + 1;
+                jamaisReconnusLettres[lettreAttendue] = (jamaisReconnusLettres[lettreAttendue] || 0) + 1;
                 //console.log('Echec total ROI ' + index + ': attendu ' + lettreAttendue + ', Tesseract a lu "' + text.trim() + '" (conf: ' + confidence.toFixed(2) + '%), CNN a lu "' + prediction.caractere + '" (confiance: ' + (prediction.confiance * 100).toFixed(2) + '%).');
                 indexEchoues.push(index);
 
@@ -141,7 +141,7 @@ export async function lireBordereau(chemin: string, mimeType: MimeType): Promise
             console.log('Temps moyen OCR par lettre : ' + (tempsTotalOCR / total).toFixed(2) + ' ms');
             console.log('Temps moyen CNN par lettre : ' + (tempsTotalCNN / total).toFixed(2) + ' ms');
             console.log('------------------------------');
-            const lettres = Object.keys(jamaisReconnusLettres).sort((a, b) => jamaisReconnusLettres[b]! - jamaisReconnusLettres[a]!).slice(0, 8); // afficher un max de 8 lettres et trier par VALEUR
+            const lettres = Object.keys(jamaisReconnusLettres).sort((a, b) => (jamaisReconnusLettres[b] ?? 0) - (jamaisReconnusLettres[a] ?? 0)).slice(0, 8); // afficher un max de 8 lettres et trier par VALEUR
             for (const lettre of lettres) {
                 console.log(`Lettre ${lettre} : ${jamaisReconnusLettres[lettre]} échecs complets.`);
             }

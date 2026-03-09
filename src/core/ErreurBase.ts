@@ -30,7 +30,7 @@ export abstract class ErreurBase extends Error {
         }
 
         // Créer un constructeur de l'erreur courante (sous-classe d'ErreurBase)
-        const errConstr = this as unknown as { new(message: string, cause?: Error): ErreurBase }; // 'this' de type inconnu puisque méthode statique
+        const errConstr = this as unknown as new(message: string, cause?: Error) => ErreurBase; // 'this' de type inconnu puisque méthode statique
         if (error instanceof Error) {
             // Erreur standard passée => on la wrappe
             return new errConstr(error.message, error);

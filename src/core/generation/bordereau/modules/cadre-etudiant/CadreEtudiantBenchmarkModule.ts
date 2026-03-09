@@ -5,7 +5,7 @@ export class CadreEtudiantBenchmarkModule extends CadreEtudiantModule {
 
     private alphabet: string;
 
-    constructor(alphabet: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+    constructor(alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
         super();
         this.alphabet = alphabet;
     }
@@ -57,9 +57,9 @@ export class CadreEtudiantBenchmarkModule extends CadreEtudiantModule {
 
         for (let i = 0; i < abc.length; i++) {
             // Lettres dans l'ordre vertical (une colonne à gauche, une colonne à droite)
-            const lettre = abc[(i % 2 * Math.ceil(abc.length / 2)) + Math.floor(i / 2)]!;
+            const lettre = abc[(i % 2 * Math.ceil(abc.length / 2)) + Math.floor(i / 2)];
             const position = layout.lettresCodeAnonymat[i * 10];
-            if (position) pdf.text(lettre, position.x + 5, position.y - 15);
+            if (position) pdf.text(lettre ?? '?', position.x + 5, position.y - 15);
         }
 
         return true;

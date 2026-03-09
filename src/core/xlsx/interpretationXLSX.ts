@@ -7,7 +7,7 @@ import { sessionCache } from "../../cache/sessions/SessionCache";
 import { EpreuveStatut } from "../../contracts/epreuves";
 import { ErreurLigneInvalide, ErreurXLSX } from "./ErreursXLSX";
 import { logInfo } from "../../utils/logger";
-import { Database, QueryValue } from "../services/database/Database";
+import { Database } from "../services/database/Database";
 import { Transaction } from "../services/database/Transaction";
 import { ConvocationData } from "../../cache/convocations/Convocation";
 import { salleCache } from "../../cache/salles/SalleCache";
@@ -218,11 +218,11 @@ async function batchInsertion<D>(transaction: Transaction, nomTable: string, ele
         const placeholders = batchElements.map(() => `(${colonnes.map(() => '?').join(', ')})`).join(', ');
         const sql = `INSERT INTO \`${nomTable}\` (${colonnes.map((col) => `\`${col}\``).join(', ')}) VALUES ${placeholders}`
             + ` ON DUPLICATE KEY UPDATE ${colonnes.map((col) => `\`${col}\` = VALUES(\`${col}\`)`).join(', ')};`;
-        const valeurs: QueryValue[] = [];
+        const valeurs = [];
 
         for (const element of batchElements) {
             for (const colonne of colonnes) {
-                valeurs.push((element)[colonne as keyof D] as QueryValue);
+                valeurs.push((element)[colonne as keyof D]);
             }
         }
 

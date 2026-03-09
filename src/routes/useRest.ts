@@ -8,9 +8,9 @@ import { ErreurAccesRefuse, ErreurNonAuthentifie, ErreurRequeteInvalide, ErreurS
  * @param req 
  * @param res 
  */
-export function useRest(fn: (req: Request) => Promise<any>, req: Request, res: Response) {
+export function useRest(fn: () => Promise<unknown>, req: Request, res: Response) {
     // plus tard(TODO) : authentification
-    fn(req)
+    fn()
         .then((data) => res.json(data))
         .catch((error) => {
             handleRestError(error, res);
@@ -23,8 +23,8 @@ export function useRest(fn: (req: Request) => Promise<any>, req: Request, res: R
  * @param req 
  * @param res 
  */
-export function useFullRest(fn: (req: Request, res: Response) => Promise<void>, req: Request, res: Response) {
-    fn(req, res).catch((error) => {
+export function useFullRest(fn: () => Promise<unknown>, req: Request, res: Response) {
+    fn().catch((error) => {
         handleRestError(error, res);
     });
 }

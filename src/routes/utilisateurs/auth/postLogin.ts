@@ -6,7 +6,7 @@ import { Database } from "../../../core/services/database/Database";
 import { compare } from "bcrypt";
 import { Utilisateur, UtilisateurData } from "../../../cache/utilisateurs/Utilisateur";
 
-export async function postLogin(req: Request): Promise<APIBoolResponse> {
+export async function postLogin(req: Request, res: Response): Promise<APIBoolResponse> {
     const infosLogin = LoginUtilisateurSchema.parse(req.body);
 
     const utilisateurEmail = await Database.query<UtilisateurData>("SELECT * FROM utilisateur WHERE email = ? LIMIT 1", [infosLogin.email]);
@@ -18,12 +18,7 @@ export async function postLogin(req: Request): Promise<APIBoolResponse> {
     const estCorrect = await new Promise<boolean>((resolve) => {
         // Compare le mot de passe avec le hash stocké
         // si valide, résoudre la promesse avec true
-        if (typeof utilisateurBrut.passwordHash !== "string") {
-            resolve(false);
-            return;
-        }
-
-        compare(infosLogin.motDePasse, utilisateurBrut.passwordHash, (err, result) => {
+        compare(infosLogin.motDePasse, utilisateurBrut.mot_de_passe, (err, result) => {
             if (err) {
                 resolve(false);
             } else {
@@ -38,9 +33,9 @@ export async function postLogin(req: Request): Promise<APIBoolResponse> {
 
     // Instancier l'utilisateur et le stocker en cache
     const utilisateur = new Utilisateur(utilisateurBrut);
-    utilisateurCache.set(utilisateurBrut.id, utilisateur);
+    utilisateurCache.set(utilisateurBrut.id_utilisateur, utilisateur);
 
-    // A FAIRE (todo): jeton d'authentaification ET cookies
+    setJetonAuthentificationCookie(res, "moufettes245");
 
     return { success: true };
 

@@ -5,11 +5,7 @@ import { join } from 'path';
 export class BenchmarkUnitaireModule extends ModeleLectureBase {
 
     /** Code à générer */
-    public code: string = "??????";
-
-    constructor() {
-        super();
-    }
+    public code = "??????";
 
     getNom(): string {
         return "Module de test/benchmark (UNITAIRE)";
@@ -107,7 +103,7 @@ export class BenchmarkUnitaireModule extends ModeleLectureBase {
             const tailleCase = 20;
 
             // Affiche une case 'X' (ne pas faire) et un texte explicatif
-            const renduLigneInstruction = (instruction: string, y: number, c: boolean = true) => {
+            const renduLigneInstruction = (instruction: string, y: number, c = true) => {
 
                 // case
                 pdf.rect(xSeparation + margesLaterales, y, tailleCase, tailleCase * 1.2)

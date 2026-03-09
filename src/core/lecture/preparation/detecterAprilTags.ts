@@ -4,10 +4,7 @@ import { ScanData } from "./extraireScans";
 import { visualiserTagDetection } from "../../../core/debug/visualiseurs/visualiserTagDetection";
 import { StatistiquesDebug } from "../../../core/debug/StatistiquesDebug";
 import { EtapeLecture } from "../../../core/debug/EtapesDeTraitementDicts";
-import { ErreurDetectionAprilTags } from "../lectureErreurs";
 import { AprilTagInstance } from "../../../core/services/AprilTagInstance";
-
-type CoordinateTransform = "flip-vertical" | "rotate-cw-90";
 
 /**
  * Détecte les april tags dans le scan fourni et retourne leurs positions (point central, angle).

@@ -1,3 +1,3 @@
-export type APIBoolResponse = {
+export interface APIBoolResponse {
     success: boolean;
-};
+}

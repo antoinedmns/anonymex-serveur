@@ -1,5 +1,3 @@
-import { Request, Response } from "express";
-import { APIBoolResponse } from "../../../contracts/common";
 import { APIGetAuthInfo } from "../../../contracts/utilisateurs";
 import { utilisateurCache } from "../../../cache/utilisateurs/UtilisateurCache";
 
@@ -10,7 +8,7 @@ import { utilisateurCache } from "../../../cache/utilisateurs/UtilisateurCache";
  * @param req 
  * @returns 
  */
-export async function getInfo(req: Request): Promise<APIGetAuthInfo> {
+export async function getInfo(): Promise<APIGetAuthInfo> {
     return {
         premiereConnexion: await utilisateurCache.isAucunUtilisateurEnregistre()
     }

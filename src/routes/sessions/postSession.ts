@@ -1,12 +1,10 @@
-import { Request } from "express";
 import { APISession, NewSessionSchema, SessionsStatut } from "../../contracts/sessions";
 import { sessionCache } from "../../cache/sessions/SessionCache";
 import { ErreurRequeteInvalide } from "../erreursApi";
 import { Session } from "../../cache/sessions/Session";
 
-export async function postSession(req: Request): Promise<APISession> {
-
-    const nouvelleSession = NewSessionSchema.parse(req.body);
+export async function postSession(data: Record<string, unknown>): Promise<APISession> {
+    const nouvelleSession = NewSessionSchema.parse(data);
 
     const dateDuJour = new Date();
     const anneeCourante = dateDuJour.getFullYear();

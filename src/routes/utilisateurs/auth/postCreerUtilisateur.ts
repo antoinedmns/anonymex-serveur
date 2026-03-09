@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { CreerUtilisateurSchema } from "../../../contracts/utilisateurs";
 import { utilisateurCache } from "../../../cache/utilisateurs/UtilisateurCache";
-import bcrypt from "bcrypt";
 import { ErreurRequeteInvalide, ErreurServeur } from "../../erreursApi";
 import { UtilisateurData } from "../../../cache/utilisateurs/Utilisateur";
 import { Database } from "../../../core/services/database/Database";
@@ -9,6 +8,7 @@ import { roleCache } from "../../../cache/utilisateurs/roles/RoleCache";
 import { Role, RolePermissions } from "../../../cache/utilisateurs/roles/Role";
 import { logInfo } from "../../../utils/logger";
 import { setJetonAuthentificationCookie } from "./postLogin";
+import bcrypt from "bcrypt";
 
 export async function postCreerUtilisateur(req: Request, res: Response): Promise<void> {
     const nouvelUtilisateur = CreerUtilisateurSchema.parse(req.body);
@@ -36,7 +36,8 @@ export async function postCreerUtilisateur(req: Request, res: Response): Promise
             throw new ErreurServeur("Erreur lors du hachage du mot de passe.");
         });
 
-        let assignerRoleId: number = autorisationStandard ? donneesInvitation[0]!.id_role : 1; // Rôle associé à l'invitation, ou role admin lors du setup
+        // Rôle associé à l'invitation, ou role admin lors du setup
+        let assignerRoleId = autorisationStandard ? donneesInvitation[0]?.id_role : 1;
 
         if (autorisationSetup) {
             // première inscription : assigner le rôle administrateur par défaut
@@ -49,6 +50,8 @@ export async function postCreerUtilisateur(req: Request, res: Response): Promise
                 await roleCache.insert(roleAdmin, new Role({ id_role: 1, ...roleAdmin }));
             }
         }
+
+        if (!assignerRoleId) throw new ErreurServeur("Impossible d'assigner un rôle à l'utilisateur. Invitation invalide.");
 
         try {
 

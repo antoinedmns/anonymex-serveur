@@ -5,7 +5,7 @@
  */
 export abstract class CacheBase<I, T> {
 
-    private cache: Map<I, T> = new Map();
+    private cache = new Map<I, T>();
 
     /**
      * Récupérer un élément du cache.

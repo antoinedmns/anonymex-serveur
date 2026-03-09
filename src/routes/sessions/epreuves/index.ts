@@ -4,13 +4,18 @@ import { getEpreuves } from "./getEpreuves";
 import { getEpreuve } from "./getEpreuve";
 import { patchEpreuve } from "./patchEpreuve";
 
-const epreuvesRouter = Router();
+const epreuvesRouter = Router({ mergeParams: true });
 
 // GET /sessions/:session/epreuves/:code/
-epreuvesRouter.get("/:code", (req, res) => useRest(getEpreuve, req, res));
+epreuvesRouter.get<{ session: string, code: string }>
+    ("/:code", (req, res) => useRest(() => getEpreuve(req.params.session, req.params.code), req, res));
+
 // GET /sessions/:session/epreuves/
-epreuvesRouter.get("/", (req, res) => useRest(getEpreuves, req, res));
+epreuvesRouter.get<{ session: string }>
+    ("/", (req, res) => useRest(() => getEpreuves(req.params.session), req, res));
+
 // PATCH /sessions/:session/epreuves/:code/
-epreuvesRouter.patch("/:code", (req, res) => useRest(patchEpreuve, req, res));
+epreuvesRouter.patch<{ session: string, code: string }>
+    ("/:code", (req, res) => useRest(() => patchEpreuve(req.params.session, req.params.code, req.body), req, res));
 
 export { epreuvesRouter };

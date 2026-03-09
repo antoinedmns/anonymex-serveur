@@ -1,9 +1,9 @@
-import { literal, object, z } from "zod";
+import { z } from "zod";
 
 // --- Schémas ---
 export const RoleSchema = z.object({
     idRole: z.number().int().positive(),
-    nom : z.string(),
+    nom: z.string(),
     permissions: z.number().int().positive()
 });
 

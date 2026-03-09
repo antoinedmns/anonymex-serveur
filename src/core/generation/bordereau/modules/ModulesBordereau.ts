@@ -26,5 +26,5 @@ export abstract class CadreCorrecteurModule extends ModeleLectureBase {
 }
 
 export abstract class EnteteModule extends ModeleLectureBase {
-    abstract getZonesLecture(): {};
+    abstract getZonesLecture(): Record<string, LayoutPosition | LayoutPosition[]>;
 }

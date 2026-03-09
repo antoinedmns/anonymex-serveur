@@ -30,22 +30,26 @@ export function genererAprilTags(doc: PDFKit.PDFDocument, tailleMm: number, marg
     const tailleDePixel = taille / famille.size; // Taille d'un pixel du tag en points PDF
     const margeQuietZone = 4 * tailleDePixel; // Marge "quiet zone" autour du tag
 
-    for (let i of coins ?? [0, 1, 2, 3]) {
+    for (const i of coins ?? [0, 1, 2, 3]) {
         if (i < 0 || i > 3) throw new ErreurAprilTag("Coin en dehors de la plage autorisée (0..3)");
+        if (APRILTAGS_IDS[i] === undefined) throw new ErreurAprilTag("ID d'AprilTag non défini pour le coin " + i);
+        if (positions[i] === undefined) throw new ErreurAprilTag("Position non définie pour le coin " + i);
 
         // Sous forme de tableau de pixels (b=black,w=white,x=transparent) formant le tag
-        const tagPixels = famille.render(APRILTAGS_IDS[i]!);
+        const tagPixels = famille.render(APRILTAGS_IDS[i]);
 
         // --- DESSIN DU TAG ---
-        const tagX = positions[i]!.x;
-        const tagY = positions[i]!.y;
+        const tagX = positions[i].x;
+        const tagY = positions[i].y;
 
         // quiet zone
         doc.rect(tagX - margeQuietZone, tagY - margeQuietZone, taille + 2 * margeQuietZone, taille + 2 * margeQuietZone).fill('#FFFFFF');
 
         // Dessiner chaque pixel individuellement (jusqu'à 9x9 = 81 pixels)
         for (let y = 0; y < tagPixels.length; y++) {
-            const lignePixels = tagPixels[y]!;
+            const lignePixels = tagPixels[y];
+            if (!lignePixels) continue;
+
             for (let x = 0; x < lignePixels.length; x++) {
                 if (lignePixels[x] === 'b') {
                     // Rempli avec un gris à 80% : économie d'encre
@@ -87,7 +91,9 @@ export function genererAprilTag(doc: PDFKit.PDFDocument, id: number, tailleMm: n
 
     // Dessiner chaque pixel individuellement (jusqu'à 9x9 = 81 pixels)
     for (let y = 0; y < tagPixels.length; y++) {
-        const lignePixels = tagPixels[y]!;
+        const lignePixels = tagPixels[y];
+        if (!lignePixels) continue;
+
         for (let x = 0; x < lignePixels.length; x++) {
             if (lignePixels[x] === 'b') {
                 // Rempli avec un gris à 80% : économie d'encre

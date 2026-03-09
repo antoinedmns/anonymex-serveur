@@ -4,7 +4,7 @@ import { Salle, SalleData } from "./Salle";
 
 export class SalleCache extends DatabaseCacheBase<number /*idSalle*/, Salle, SalleData> {
 
-    nomTable: string = "salle";
+    nomTable = "salle";
     colonnesClePrimaire: string[] = ["id_salle"];
 
     private cacheNom = new Map<string, Salle>();

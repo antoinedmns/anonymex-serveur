@@ -3,7 +3,7 @@ import { Role, RoleData } from "./Role";
 
 class RoleCache extends DatabaseCacheBase<number /*id*/, Role, RoleData> {
 
-    nomTable: string = "role";
+    nomTable = "role";
     colonnesClePrimaire: string[] = ["id_role"];
 
     fromDatabase(data: RoleData): Role {

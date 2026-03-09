@@ -1,5 +1,3 @@
-import { utilisateurCache } from "./cache/utilisateurs/UtilisateurCache";
-import { Database } from "./core/services/database/Database";
 import { indexRouter } from "./routes";
 import { logInfo } from "./utils/logger";
 import cors from "cors";

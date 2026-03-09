@@ -1,7 +1,6 @@
-import { RowData } from "../../core/services/database/Database";
 import { ElementEnCache } from "../base/ElementEnCacheBase";
 
-export interface ConvocationData extends RowData {
+export interface ConvocationData {
     id_session: number,
     code_epreuve: string,
     numero_etudiant: number,

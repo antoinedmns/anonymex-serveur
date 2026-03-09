@@ -1,8 +1,21 @@
-import { Request, Response } from "express";
-import { APIUpdateEpreuve } from "../../../contracts/epreuves";
-import { mockEpreuve } from "./getEpreuves";
+import { APIUpdateEpreuve, UpdateEpreuveSchema } from "../../../contracts/epreuves";
+import { sessionCache } from "../../../cache/sessions/SessionCache";
 
-export async function patchEpreuve(req: Request): Promise<APIUpdateEpreuve> {
+export async function patchEpreuve(sessionId: string, epreuveCode: string, data: Record<string, unknown>): Promise<APIUpdateEpreuve> {
+    const idSession = parseInt(sessionId ?? '');
 
-    return mockEpreuve();
+    if (isNaN(idSession) || sessionId === undefined) {
+        throw new Error("L'ID de session n'est pas valide.");
+    }
+
+    const session = await sessionCache.getOrFetch(idSession);
+    if (!session) throw new Error("La session passée n'existe pas.");
+
+    const epreuve = await session.epreuves.getOrFetch(epreuveCode);
+    if (!epreuve) throw new Error("L'épreuve passée n'existe pas.");
+
+    const dataParsees = UpdateEpreuveSchema.parse(data);
+    await session.epreuves.update(epreuveCode, dataParsees);
+
+    return dataParsees;
 }

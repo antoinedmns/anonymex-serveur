@@ -3,7 +3,7 @@ import { EtudiantData, Etudiant } from "./Etudiant";
 
 export class EtudiantCache extends DatabaseCacheBase<number /*numero*/, Etudiant, EtudiantData> {
 
-    nomTable: string = "etudiant";
+    nomTable = "etudiant";
     colonnesClePrimaire: string[] = ["numero_etudiant"];
 
     fromDatabase(data: EtudiantData): Etudiant {

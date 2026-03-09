@@ -1,19 +1,18 @@
 import { ElementEnCache } from "../../base/ElementEnCacheBase";
-import { RowData } from "../../../core/services/database/Database";
 import { APIRole } from "../../../contracts/roles";
 
 export enum RolePermissions {
     AUCUNE = 0, /* Accès à la plateforme refusé */
-    ADMINISTRATEUR = 1 << 0, /* Tous les droits */
-    LECTURE_SEULE = 1 << 1,
-    MODIFIER_SESSIONS = 1 << 2,
-    DEPOSER_COPIES = 1 << 3,
-    RESOUDRE_INCIDENTS = 1 << 4,
-    MODIFIER_NOTES = 1 << 5,
-    GERER_UTILISATEURS = 1 << 6,
+    ADMINISTRATEUR = (1 << 0), /* Tous les droits */
+    LECTURE_SEULE = (1 << 1),
+    MODIFIER_SESSIONS = (1 << 2),
+    DEPOSER_COPIES = (1 << 3),
+    RESOUDRE_INCIDENTS = (1 << 4),
+    MODIFIER_NOTES = (1 << 5),
+    GERER_UTILISATEURS = (1 << 6),
 }
 
-export interface RoleData extends RowData {
+export interface RoleData {
     id_role: number;
     nom: string;
     permissions: number; /* Bitmask */

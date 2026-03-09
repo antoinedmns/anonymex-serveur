@@ -69,7 +69,7 @@ export async function pdfToBuffer(pdf: PDFDocumentProxy, pageNum: number): Promi
         const imgData = imgObj.data as Uint8Array;
         data = new Uint8ClampedArray(imgObj.width * imgObj.height);
         for (let i = 0; i < imgData.length; i++) {
-            const byte = imgData[i]!;
+            const byte = imgData[i] ?? 0;
             for (let bit = 0; bit < 8; bit++) {
                 const pixel = (byte >> (7 - bit)) & 1;
                 data[i * 8 + bit] = pixel * 255; // 1bpp -> 8bpp

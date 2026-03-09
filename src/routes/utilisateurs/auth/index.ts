@@ -8,12 +8,12 @@ import { postCreerUtilisateur } from "./postCreerUtilisateur";
 const authRouteur = Router();
 
 // POST /utilisateurs/auth/login
-authRouteur.post("/login", (req, res) => useRest(postLogin, req, res));
+authRouteur.post("/login", (req, res) => useFullRest(() => postLogin(req, res), req, res));
 // GET /utilisateurs/auth/info
 authRouteur.get("/info", (req, res) => useRest(getInfo, req, res));
 // POST /utilisateurs/auth/invitation
-authRouteur.post("/invitation", (req, res) => useRest(getInvitation, req, res));
+authRouteur.post("/invitation", (req, res) => useRest(() => getInvitation(req.body), req, res));
 // POST /utilisateurs/auth/creer
-authRouteur.post("/creer", (req, res) => useFullRest(postCreerUtilisateur, req, res));
+authRouteur.post("/creer", (req, res) => useFullRest(() => postCreerUtilisateur(req, res), req, res));
 
 export { authRouteur as authRouteur };

@@ -3,7 +3,7 @@ import { Utilisateur, UtilisateurData } from "./Utilisateur";
 
 class UtilisateurCache extends DatabaseCacheBase<number /*id*/, Utilisateur, UtilisateurData> {
 
-    nomTable: string = "utilisateur";
+    nomTable = "utilisateur";
     colonnesClePrimaire: string[] = ["id_utilisateur"];
 
     /** Aucun utilisateur enregistré : Autorise la création du premier utilisateur (sans lien d'invitation) */

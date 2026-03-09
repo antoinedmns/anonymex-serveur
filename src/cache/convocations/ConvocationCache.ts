@@ -3,7 +3,7 @@ import { Convocation, ConvocationData } from "./Convocation";
 
 export class ConvocationCache extends DatabaseCacheBase<number /*numeroEtudiant*/, Convocation, ConvocationData> {
 
-    nomTable: string = "convocation_epreuve";
+    nomTable = "convocation_epreuve";
     colonnesClePrimaire: string[] = ["id_session", "code_epreuve", "numero_etudiant"];
 
     /**

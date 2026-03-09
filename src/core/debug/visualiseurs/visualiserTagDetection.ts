@@ -15,7 +15,9 @@ export async function visualiserTagDetection(image: Sharp, detections: AprilTagD
         ctx.lineWidth = 5;
         ctx.beginPath();
         for (let i = 0; i < corners.length; i++) {
-            const corner = corners[i]!;
+            const corner = corners[i];
+            if (!corner) continue;
+
             if (i === 0) {
                 ctx.moveTo(corner[0], corner[1]);
             } else {

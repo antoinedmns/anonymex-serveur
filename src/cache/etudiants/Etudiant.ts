@@ -1,7 +1,6 @@
 import { ElementEnCache } from "../base/ElementEnCacheBase";
-import { RowData } from "../../core/services/database/Database";
 
-export interface EtudiantData extends RowData {
+export interface EtudiantData {
     numero_etudiant: number,
     nom: string,
     prenom: string

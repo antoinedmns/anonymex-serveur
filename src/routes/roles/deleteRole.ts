@@ -1,21 +1,16 @@
-import { Request, Response } from "express";
-import { APIRole } from "../../contracts/roles";
 import { ErreurRequeteInvalide } from "../erreursApi";
+import { roleCache } from "../../cache/utilisateurs/roles/RoleCache";
 
-export async function deleteRole(req: Request): Promise<{ success: boolean }> {
-    /*
-    const { roleId } = req.params;
+export async function deleteRole(roleId: string): Promise<{ success: boolean }> {
     const idRole = parseInt(roleId ?? '');
 
-    if(idRole === undefined) {
-        throw new ErreurRequeteInvalide("Identifiant de rôle invalide.");
+    if (isNaN(idRole) || roleId === undefined) {
+        throw new ErreurRequeteInvalide("L'ID de rôle n'est pas valide.");
     }
-    
-    const suppressionRole = await roleCache.delete(idRole) 
 
-    return { 
-        success : suppressionRole.affectedRows > 0
+    const suppressionRole = await roleCache.delete(idRole);
+
+    return {
+        success: suppressionRole.affectedRows > 0
     }
-    */
-    return { success: Math.random() < 0.5 };
 }

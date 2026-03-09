@@ -2,15 +2,15 @@ import { ElementEnCache } from "../base/ElementEnCacheBase";
 import { Role } from "./roles/Role";
 import { roleCache } from "./roles/RoleCache";
 import { APIUtilisateur } from "../../contracts/utilisateurs";
-import { RowData } from "../../core/services/database/Database";
 
-export interface UtilisateurData extends RowData {
+export interface UtilisateurData {
     id_utilisateur: number;
     mot_de_passe: string,
     email: string;
     nom: string;
     prenom: string;
     id_role: number;
+    jeton_connexion?: string;
 }
 
 export class Utilisateur extends ElementEnCache {

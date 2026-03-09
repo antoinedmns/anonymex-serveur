@@ -12,25 +12,25 @@ import { CIBLES_NB_RINGS } from "../../generation/common/genererCiblesConcentriq
 type FormatId = keyof typeof dimensionsFormats;
 type CoinIndice = 0 | 1 | 2 | 3;
 
-export type CibleConcentriqueDetection = {
+export interface CibleConcentriqueDetection {
     id: number;
     rings: number;
     centre: [number, number];
     rayonPx: number;
     coin: CoinIndice;
-};
+}
 
-export type DetecterCiblesConcentriquesOptions = {
+export interface DetecterCiblesConcentriquesOptions {
     format?: FormatId;
     tailleCibleMm?: number;
-};
+}
 
 /** Map de lookup optimisée pour associer le nb. d'anneaux internes à l'ID de la cible */
 const RING_ID_LOOKUP = new Map<number, number>(
     CIBLES_NB_RINGS.map((nbRings, idx) => [nbRings, idx])
 );
 
-export async function detecterCiblesConcentriques(scan: ScanData, imageSharp: sharp.Sharp, options?: DetecterCiblesConcentriquesOptions): Promise<Array<null | CibleConcentriqueDetection>> {
+export async function detecterCiblesConcentriques(scan: ScanData, imageSharp: sharp.Sharp, options?: DetecterCiblesConcentriquesOptions): Promise<(null | CibleConcentriqueDetection)[]> {
 
     const tempsDebut = Date.now();
 
@@ -115,7 +115,7 @@ export async function detecterCiblesConcentriques(scan: ScanData, imageSharp: sh
         const hierarchieData = hierarchie.data32S;
 
         // Pour chaque coin [HG, HD, BG, BD], garder la meilleure cible détectée (la plus proche du bord correspondant)
-        const coinMeilleurCandidats: Array<null | CibleConcentriqueDetection> = [null, null, null, null];
+        const coinMeilleurCandidats: (null | CibleConcentriqueDetection)[] = [null, null, null, null];
 
         for (let i = 0; i < contours.size(); i++) {
             const parentIdx = hierarchieData[i * 4 + 3];
@@ -123,11 +123,11 @@ export async function detecterCiblesConcentriques(scan: ScanData, imageSharp: sh
 
             // Compter le nombre d'anneaux imbriqués
             let imbrications = 1;
-            let child = hierarchieData[i * 4 + 2]!;
-            while (child !== -1) {
+            let child = hierarchieData[i * 4 + 2];
+            while (child !== -1 && child !== undefined) {
                 imbrications++;
                 // chercher l'enfant de l'imbrication actuelle
-                child = hierarchieData[child * 4 + 2]!;
+                child = hierarchieData[child * 4 + 2];
             }
 
             const tagId = RING_ID_LOOKUP.get(imbrications) ?? 0;
