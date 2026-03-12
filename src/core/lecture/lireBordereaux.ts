@@ -18,7 +18,7 @@ const ALPHABET = "";
 
 export type CallbackLecture = (message: string, id: number, data: Record<string, unknown>) => void;
 
-export async function lireBordereaux(fichiers: Fichier[], callback: CallbackLecture): Promise<void> {
+export async function lireBordereaux(fichiers: Fichier[], callback?: CallbackLecture): Promise<void> {
 
     // Configurer tesseract
     await TesseractOCR.configurerModeCaractereUnique(ALPHABET);
@@ -82,12 +82,12 @@ export async function lireBordereaux(fichiers: Fichier[], callback: CallbackLect
 
                 // Erreur lors de la lecture du bordereau : faire remonter l'erreur
                 if (error instanceof ErreurBase) {
-                    callback('incident', 0, { name: error.name, message: error.message });
+                    callback?.('incident', 0, { name: error.name, message: error.message });
                 } else if (error instanceof Error) {
-                    callback('error', 0, { message: error.message });
+                    callback?.('error', 0, { message: error.message });
                     console.error("Erreur lors de la lecture du bordereau :", error);
                 } else {
-                    callback('error', 0, { message: 'Erreur inconnue' });
+                    callback?.('error', 0, { message: 'Erreur inconnue' });
                     console.error("Erreur inconnue lors de la lecture du bordereau :", error);
                 }
             }

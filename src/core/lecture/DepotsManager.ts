@@ -4,8 +4,8 @@ import { CallbackLecture, lireBordereaux } from "./lireBordereaux";
 interface Depot {
     codeEpreuve: string;
     fichiers: Fichier[];
-    /** Fonction apelée lors de la lecture du dépot, transférant les informations de lecture. */
-    callback: CallbackLecture;
+    /** Fonction pour remonter la progression de la lecture. Undefined si aucun client connecté. */
+    callback?: CallbackLecture;
 }
 
 /**
@@ -15,12 +15,32 @@ export class DepotsManager {
     /** La file d'attente des dépôts. */
     private static depotQueue: Depot[] = [];
 
+    /** Map des dépôts lus ou en attente, clé = ID de dépôt. */
+    private static depots = new Map<number, Depot>();
+
+    /** ID du prochain dépôt à créer. */
+    private static nextDepotId = 1;
+
+    /**
+     * Créer un dépôt et l'ajouter.
+     * @param codeEpreuve Code de l'épreuve associée au dépôt.
+     * @param fichiers Fichiers du dépôt.
+     * @returns ID du dépôt créé.
+     */
+    public static creerDepot(codeEpreuve: string, fichiers: Fichier[]): number {
+        const id = this.nextDepotId++;
+        const depot = { codeEpreuve, fichiers };
+        this.depots.set(id, depot);
+        this.ajoutDepot(depot);
+        return id;
+    }
+
     /**
      * Commence la lecture d'un dépôt, ou l'ajoute en file d'attente si une lecture est déjà en cours.
      * @param depot 
      * @returns 
      */
-    public static processDepot(depot: Depot): void {
+    public static ajoutDepot(depot: Depot): void {
         if (this.depotQueue.length === 0) {
             this.lectureDepot(depot);
         } else {
@@ -36,7 +56,7 @@ export class DepotsManager {
         try {
             await lireBordereaux(depot.fichiers, depot.callback);
         } catch (error) {
-            depot.callback('error', -1, error instanceof Error ? { message: error.message } : { message: 'Inconnu' });
+            depot.callback?.('error', -1, error instanceof Error ? { message: error.message } : { message: 'Inconnu' });
         }
     }
 }
