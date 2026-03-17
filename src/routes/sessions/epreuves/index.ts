@@ -3,8 +3,11 @@ import { useRest } from "../../useRest";
 import { getEpreuves } from "./getEpreuves";
 import { getEpreuve } from "./getEpreuve";
 import { patchEpreuve } from "./patchEpreuve";
+import { depotRouter } from "./depot";
 
 const epreuvesRouter = Router({ mergeParams: true });
+
+epreuvesRouter.use("/:code/depot", depotRouter);
 
 // GET /sessions/:session/epreuves/:code/
 epreuvesRouter.get<{ session: string, code: string }>

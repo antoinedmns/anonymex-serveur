@@ -7,6 +7,7 @@ export enum EpreuveStatut {
     DEPOT_COMPLET = 4,
     NOTE_EXPORTEES = 5
 }
+
 // --- Schémas ---
 export const EpreuveSchema = z.object({
     session: z.number().int().positive(),

@@ -16,7 +16,7 @@ const DIAMETRE_CIBLES_MM = 8;
 
 const ALPHABET = "";
 
-export type CallbackLecture = (message: string, id: number, data: Record<string, unknown>) => void;
+export type CallbackLecture = (event: string, id: number, data: Record<string, unknown>) => void;
 
 export async function lireBordereaux(fichiers: Fichier[], callback?: CallbackLecture): Promise<void> {
 

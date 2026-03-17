@@ -4,8 +4,16 @@ import { CallbackLecture, lireBordereaux } from "./lireBordereaux";
 interface Depot {
     codeEpreuve: string;
     fichiers: Fichier[];
-    /** Fonction pour remonter la progression de la lecture. Undefined si aucun client connecté. */
+    /**
+     * Callback pour remonter la progression de la lecture. Undefined si aucun client connecté. \
+     * Connexion établie via *Server-Sent Events* (SSE) sur l'endpoint `/api/lecture/progress/:depotId`.
+     */
     callback?: CallbackLecture;
+    /**
+     * Appellé lorsque la lecture du dépôt est terminée, pour nettoyer les ressources associées. \
+     * Permet notamment de fermer la connexion SSE si un client est connecté.
+     */
+    onComplete?: () => void;
 }
 
 /**
@@ -57,6 +65,17 @@ export class DepotsManager {
             await lireBordereaux(depot.fichiers, depot.callback);
         } catch (error) {
             depot.callback?.('error', -1, error instanceof Error ? { message: error.message } : { message: 'Inconnu' });
+        } finally {
+            // Défiler le dépôt suivant
+            if (this.depotQueue.length > 0) {
+                const nextDepot = this.depotQueue.shift();
+                if (nextDepot) this.lectureDepot(nextDepot);
+            }
         }
+    }
+
+    /** Récupère un dépôt par son ID. */
+    public static getDepot(id: number): Depot | undefined {
+        return this.depots.get(id);
     }
 }
