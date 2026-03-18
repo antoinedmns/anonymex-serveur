@@ -34,7 +34,6 @@ export async function getIncident(sessionId: string, incidentId: string): Promis
         codeEpreuve: "HAI405I",
         titre: "Numéro d'anonymat inconnu",
         details: "Lorem ipsum...",
-        resolu: Math.floor(Math.random()) < 0.5,
         codeAnonymat: "AFGH",
         noteQuart: 60,
     });
