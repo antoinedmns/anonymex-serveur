@@ -18,7 +18,15 @@ export async function getIncident(sessionId: string, incidentId: string): Promis
         throw new ErreurRequeteInvalide("La session passée n'existe pas.");
     }
 
-    //TODO: A continuer pas sur de tout...
+    const incident = await session.incidents.getOrFetch(idIncident);
+
+    if(incident == undefined) {
+        throw new ErreurRequeteInvalide("L'incident demandé n'existe pas.");
+    }
+
+    return incident.toJSON();
+
+    // ON GARDE LE MOCK POUR TESTER LE CLIENT
 
     return ({
         idIncident: 4,

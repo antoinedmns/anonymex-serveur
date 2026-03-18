@@ -11,6 +11,6 @@ incidentsRouter.get<{ session: string, id: string }>("/:id", (req, res) =>
 
 // GET /sessions/:session/incidents/
 incidentsRouter.get<{ session: string }>("/", (req, res) =>
-    useRest(() => getIncidents(), req, res));
+    useRest(() => getIncidents(req.params.session), req, res));
 
 export { incidentsRouter };
