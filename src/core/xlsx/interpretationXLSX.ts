@@ -158,18 +158,18 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
             }
 
             // Get ou créer la convocation
-            const convocation = epreuve?.convocations.get(codeEtudiant);
-            if (!convocation) {
-                newConvocations.push({
-                    id_session: session.id,
-                    code_epreuve: codeEpreuve,
-                    numero_etudiant: codeEtudiant,
-                    code_anonymat: genAnonymatTemporaire(),
-                    note_quart: null,
-                    id_salle: idSalle,
-                    rang: 67 // TODO (TEMPORAIRE !)
-                })
-            }
+            //const convocation = epreuve?.convocations.get(codeEtudiant);
+            //if (!convocation) {
+            newConvocations.push({
+                id_session: session.id,
+                code_epreuve: codeEpreuve,
+                numero_etudiant: codeEtudiant,
+                code_anonymat: genAnonymatTemporaire(),
+                note_quart: null,
+                id_salle: idSalle,
+                rang: 67 // TODO (TEMPORAIRE !)
+            })
+            //}
         }
 
         await batchInsertion<EtudiantData>(transaction, 'etudiant', newEtudiants);

@@ -1,10 +1,10 @@
 import { DatabaseCacheBase } from "../base/DatabaseCacheBase";
 import { Convocation, ConvocationData } from "./Convocation";
 
-export class ConvocationCache extends DatabaseCacheBase<number /*numeroEtudiant*/, Convocation, ConvocationData> {
+export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/, Convocation, ConvocationData> {
 
     nomTable = "convocation_epreuve";
-    colonnesClePrimaire: string[] = ["id_session", "code_epreuve", "numero_etudiant"];
+    colonnesClePrimaire: string[] = ["id_session", "code_epreuve", "code_anonymat"];
 
     /**
      * Instancier un cache pour les convocations d'une épreuve donnée.
@@ -18,8 +18,8 @@ export class ConvocationCache extends DatabaseCacheBase<number /*numeroEtudiant*
         return new Convocation(data);
     }
 
-    getComposanteCache(element: Convocation): number {
-        return element.numeroEtudiant;
+    getComposanteCache(element: Convocation): string {
+        return element.codeAnonymat;
     }
 
 }
