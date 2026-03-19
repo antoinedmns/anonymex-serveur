@@ -47,6 +47,7 @@ CREATE TABLE etudiant (
 
 CREATE TABLE epreuve (
     id_session INT UNSIGNED NOT NULL,
+    id_decalage SMALLINT UNSIGNED NOT NULL, -- Valeur de décalage à appliquer à la génération et la lecture des codes d'anonymat
     code_epreuve CHAR(10) NOT NULL, -- HAXXXXX
     nom VARCHAR(100) NOT NULL,
     statut TINYINT UNSIGNED NOT NULL, -- 0 : INITIAL, 1 : MATERIEL EXAMEN IMPRIME, 2 : DEPOT COPIES, 3 : DEPOT COMPLET, 4 : NOTES EXPORTEES
@@ -56,26 +57,28 @@ CREATE TABLE epreuve (
     CONSTRAINT pk_epreuve_session PRIMARY KEY (id_session, code_epreuve),
     CONSTRAINT fk_es_session FOREIGN KEY (id_session)
         REFERENCES session_examen(id_session)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT uq_decalage UNIQUE (id_session, id_decalage)
 );
 
 CREATE TABLE salle (
-    id_salle SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    numero_salle VARCHAR(50) NOT NULL,
-    type_salle VARCHAR(50) NOT NULL, -- préfixe : SC, A, TD, ...
-    CONSTRAINT pk_salle PRIMARY KEY (id_salle)
+    code_salle VARCHAR(50) NOT NULL,
+    libelle_salle VARCHAR(100) NOT NULL,
+    code_batiment VARCHAR(50) NOT NULL,
+    libelle_batiment VARCHAR(100) NOT NULL,
+    CONSTRAINT pk_salle PRIMARY KEY (code_salle)
 );
 
-CREATE TABLE convocation_epreuve (
+CREATE TABLE convocation (
     id_session INT UNSIGNED NOT NULL,
     code_epreuve CHAR(10) NOT NULL,
     numero_etudiant INT UNSIGNED NOT NULL,
+    rang SMALLINT UNSIGNED,
     code_anonymat CHAR(6) NOT NULL,
     note_quart TINYINT UNSIGNED,
-    id_salle SMALLINT UNSIGNED NOT NULL,
-    rang TINYINT NOT NULL,
-    CONSTRAINT pk_convocation_epreuve PRIMARY KEY (id_session, code_epreuve, numero_etudiant),
-    CONSTRAINT uq_code UNIQUE (id_session, code_anonymat),
+    code_salle VARCHAR(50) NOT NULL,
+    CONSTRAINT pk_convocation PRIMARY KEY (id_session, code_epreuve, code_anonymat),
+    CONSTRAINT uq_num_etudiant UNIQUE (id_session, code_epreuve, numero_etudiant),
     CONSTRAINT fk_ese_session FOREIGN KEY (id_session)
         REFERENCES session_examen(id_session)
         ON DELETE CASCADE ON UPDATE CASCADE,
@@ -85,8 +88,8 @@ CREATE TABLE convocation_epreuve (
     CONSTRAINT fk_ese_etudiant FOREIGN KEY (numero_etudiant)
         REFERENCES etudiant(numero_etudiant)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_ese_salle FOREIGN KEY (id_salle)
-        REFERENCES salle(id_salle)
+    CONSTRAINT fk_ese_salle FOREIGN KEY (code_salle)
+        REFERENCES salle(code_salle)
         ON DELETE RESTRICT ON UPDATE CASCADE
 );
 

@@ -3,7 +3,6 @@ import { EpreuveData } from "../../cache/epreuves/Epreuve";
 import { EtudiantData } from "../../cache/etudiants/Etudiant";
 import { etudiantCache } from "../../cache/etudiants/EtudiantCache";
 import { Session } from "../../cache/sessions/Session";
-import { sessionCache } from "../../cache/sessions/SessionCache";
 import { EpreuveStatut } from "../../contracts/epreuves";
 import { ErreurLigneInvalide, ErreurXLSX } from "./ErreursXLSX";
 import { logInfo } from "../../utils/logger";
@@ -11,7 +10,9 @@ import { Database } from "../services/database/Database";
 import { Transaction } from "../services/database/Transaction";
 import { ConvocationData } from "../../cache/convocations/Convocation";
 import { salleCache } from "../../cache/salles/SalleCache";
-import { Salle } from "../../cache/salles/Salle";
+import { SalleData } from "../../cache/salles/Salle";
+import { appliquerDecalage, genererCodesHamming, melangerCodes } from "../../utils/codeAnonymatUtils";
+import { config } from "../../config";
 
 const CHAMPS_INTERPRETATION = {
     // nom du champ interprété => nom de la colonne dans le XLSX
@@ -22,7 +23,13 @@ const CHAMPS_INTERPRETATION = {
     nomEpreuve: "LIC_RES",
     prenomEtudiant: "LIB_PR1_IND",
     nomEtudiant: "LIB_NOM_PAT_IND",
-    codeEtudiant: "COD_ETU"
+    codeEtudiant: "COD_ETU",
+    libelleSalle: "LIB_SAL",
+    codeBatiment: "COD_BAT",
+    libelleBatiment: "LIB_BAT",
+    numPlace: "NUM_PLC_AFF_PSI",
+    duree: "DUREE_EXA",
+    heureFin: "HEURE_FIN"
 };
 
 interface InterpretationFiltres {
@@ -45,25 +52,25 @@ interface InterpretationFiltres {
  */
 export async function interpretationXLSX(data: Record<string, unknown>[], session: Session, filtres?: InterpretationFiltres): Promise<boolean> {
 
-    // TEMPORAIRE!! créer la session si non existante
-    const s = await sessionCache.getOrFetch(session.id);
-    if (!s) {
-        await sessionCache.insert({
-            id_session: session.id,
-            nom: `Session ${session.id}`,
-            annee: new Date().getFullYear(),
-            statut: 0
-        }, session);
-    }
-
     const debut = Date.now();
 
     // Mettre en cache les épreuves et étudiants existants de la session
     await session.epreuves.getAll();
+    await salleCache.getAll();
     await etudiantCache.getAll(); // devrait sûrement être partitionné par session.....
 
     // Démarrer une transaction
     const transaction = await Database.creerTransaction();
+
+    // Générer les codes d'anonymat avec contrainte de distance de Hamming
+    const alphabet = config.codesAnonymat.alphabetCodeAnonymat;
+    const maxCodesParEpreuve = Math.pow(alphabet.length, 3);
+    let indexCode = 0; // Indice du prochain code d'anonymat à attribuer, global pour éviter la prédictibilité
+    const codes = {
+        1: melangerCodes(genererCodesHamming(maxCodesParEpreuve, 3, 1, alphabet)),
+        2: melangerCodes(genererCodesHamming(maxCodesParEpreuve, 3, 2, alphabet)),
+        3: melangerCodes(genererCodesHamming(maxCodesParEpreuve, 3, 3, alphabet)),
+    }
 
     // En cas d'erreur, rollback la transaction
     try {
@@ -73,21 +80,35 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
         const newEtudiants: EtudiantData[] = [];
         const newEpreuves: EpreuveData[] = [];
         const newConvocations: ConvocationData[] = [];
-        //const newSalles: Omit<SalleData, 'id_salle'>[] = [];
+        const newSalles: SalleData[] = [];
+
+        // Map des convocations par code d'épreuve, pour attribuer les codes d'anonymat après coup
+        const convocationsEpreuves = new Map<string, Omit<ConvocationData, 'code_anonymat'>[]>();
+
+        // Map du décalage appliqué à chaque code d'épreuve (pour appliquer la redondance systématique)
+        const decalagesEpreuves = new Map<string, number>();
+        let decalageGlobal = 0; // prochain décalage à attribuer
 
         for (const [indice, row] of data.entries()) {
 
             const dateEpreuve = (row[CHAMPS_INTERPRETATION.date] as string).replaceAll(' ', '');
             const horaire = (row[CHAMPS_INTERPRETATION.heure] as string).replaceAll(' ', '');
-            const nomSalle = row[CHAMPS_INTERPRETATION.salle] as string;
+            const codeSalle = row[CHAMPS_INTERPRETATION.salle] as string;
             const codeEpreuve = row[CHAMPS_INTERPRETATION.codeEpreuve] as string;
             const nomEpreuve = row[CHAMPS_INTERPRETATION.nomEpreuve] as string;
             const prenomEtudiant = row[CHAMPS_INTERPRETATION.prenomEtudiant] as string;
             const nomEtudiant = row[CHAMPS_INTERPRETATION.nomEtudiant] as string;
             const codeEtudiant = parseInt(row[CHAMPS_INTERPRETATION.codeEtudiant] as string);
+            const libelleSalle = row[CHAMPS_INTERPRETATION.libelleSalle] as string;
+            const codeBatiment = row[CHAMPS_INTERPRETATION.codeBatiment] as string;
+            const libelleBatiment = row[CHAMPS_INTERPRETATION.libelleBatiment] as string;
+            const numPlace = row[CHAMPS_INTERPRETATION.numPlace] as string;
+            const duree = row[CHAMPS_INTERPRETATION.duree] as string;
+            const heureFin = row[CHAMPS_INTERPRETATION.heureFin] as string;
 
             // Vérifications basiques
-            if (!dateEpreuve || !horaire || !nomSalle || !codeEpreuve || !nomEpreuve || !prenomEtudiant || !nomEtudiant || !codeEtudiant) {
+            if (!dateEpreuve || !horaire || !codeSalle || !codeEpreuve || !nomEpreuve || !prenomEtudiant || !nomEtudiant || !codeEtudiant
+                || !libelleSalle || !codeBatiment || !libelleBatiment || numPlace === undefined || !duree || !heureFin) {
                 throw new ErreurLigneInvalide(indice + 1, 'champ obligatoire manquant')
             }
 
@@ -95,9 +116,11 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
                 throw new ErreurLigneInvalide(indice + 1, `code étudiant non reconnu ('${row[CHAMPS_INTERPRETATION.codeEtudiant]}')`);
             }
 
-            if (typeof dateEpreuve !== 'string' || typeof horaire !== 'string' || typeof nomSalle !== 'string' || typeof codeEpreuve !== 'string' ||
-                typeof nomEpreuve !== 'string' || typeof prenomEtudiant !== 'string' || typeof nomEtudiant !== 'string') {
+            if (typeof dateEpreuve !== 'string' || typeof horaire !== 'string' || typeof codeSalle !== 'string' || typeof codeEpreuve !== 'string' ||
+                typeof nomEpreuve !== 'string' || typeof prenomEtudiant !== 'string' || typeof nomEtudiant !== 'string' || typeof libelleSalle !== 'string' ||
+                typeof codeBatiment !== 'string' || typeof libelleBatiment !== 'string' || typeof duree !== 'string' || typeof heureFin !== 'string') {
                 throw new ErreurLigneInvalide(indice + 1, 'un champ obligatoire est du mauvais type (texte attendu)')
+
             }
 
             const dateEnMinutes = Math.round(dayjs(`${dateEpreuve} ${horaire}`, 'YYYY-MM-DD HH:mm').valueOf() / 60000); // convertir en minutes
@@ -105,10 +128,19 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
                 throw new ErreurLigneInvalide(indice + 1, `date ou horaire invalide ('${dateEpreuve} ${horaire}')`);
             }
 
+            const parts = duree.split('h');
+            const heures = parseInt(parts[0] ?? '');
+            const minutes = parseInt(parts[1] ?? '');
+            if (isNaN(heures) || isNaN(minutes)) {
+                throw new ErreurLigneInvalide(indice + 1, `format de durée invalide ('${duree}'; format attendu : "H:mm" ou "HH:mm")`);
+            }
+
+            const dureeEnMinutes = heures * 60 + minutes;
+
             // Appliquer les filtres
             if (filtres) {
                 if (filtres.codeEpreuves && !filtres.codeEpreuves.includes(codeEpreuve)) continue;
-                if (filtres.salles && !filtres.salles.includes(nomSalle)) continue;
+                if (filtres.salles && !filtres.salles.includes(codeSalle)) continue;
                 if (filtres.dateEpreuve && filtres.dateEpreuve !== dateEpreuve) continue;
             }
 
@@ -124,6 +156,7 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
 
             // Get ou créer l'épreuve
             const epreuve = session.epreuves.get(codeEpreuve);
+            const decalageEpreuve = epreuve ? epreuve.idDecalage : decalageGlobal++;
             if (!epreuve) {
                 newEpreuves.push({
                     id_session: session.id,
@@ -131,53 +164,100 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
                     nom: nomEpreuve,
                     statut: EpreuveStatut.MATERIEL_NON_IMPRIME,
                     date_epreuve: dateEnMinutes,
-                    duree: 0, // inconnu
+                    duree: dureeEnMinutes,
+                    id_decalage: decalageEpreuve,
                     nb_presents: null,
                 });
             }
 
-            const genAnonymatTemporaire = () => {
-                const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
-                let anonymat = '';
-                for (let i = 0; i < 6; i++) {
-                    anonymat += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-                }
-                return anonymat;
+            if (!decalagesEpreuves.has(codeEpreuve)) {
+                decalagesEpreuves.set(codeEpreuve, decalageEpreuve);
             }
 
-            const salle = await salleCache.getParNom(nomSalle);
-            let idSalle = salle?.idSalle;
-            if (!salle || !idSalle) {
+            // Get ou créer la salle
+            const salle = salleCache.get(codeSalle);
+            if (!salle) {
                 const salleData = {
-                    numero_salle: nomSalle,
-                    type_salle: 'ABC' // TODO : A modifier par la suite...
+                    code_salle: codeSalle,
+                    libelle_salle: libelleSalle,
+                    code_batiment: codeBatiment,
+                    libelle_batiment: libelleBatiment
                 };
-
-                idSalle = (await salleCache.insert(salleData)).insertId;
-                salleCache.set(idSalle, new Salle({ ...salleData, id_salle: idSalle }))
+                newSalles.push(salleData);
             }
 
             // Get ou créer la convocation
-            //const convocation = epreuve?.convocations.get(codeEtudiant);
-            //if (!convocation) {
-            newConvocations.push({
+            const rang = parseInt(numPlace);
+            const convocation = {
                 id_session: session.id,
                 code_epreuve: codeEpreuve,
                 numero_etudiant: codeEtudiant,
-                code_anonymat: genAnonymatTemporaire(),
                 note_quart: null,
-                id_salle: idSalle,
-                rang: 67 // TODO (TEMPORAIRE !)
-            })
-            //}
+                code_salle: codeSalle,
+                rang: rang && !isNaN(rang) ? rang : null
+            };
+
+            // Ajouter la convocation
+            const convocEpreuve = convocationsEpreuves.get(codeEpreuve);
+            if (convocEpreuve) convocEpreuve.push(convocation);
+            else convocationsEpreuves.set(codeEpreuve, [convocation]);
+        }
+
+        // Attribuer les codes d'anonymat aux convocations, par code d'épreuve
+        for (const [codeEpreuve, convocs] of convocationsEpreuves.entries()) {
+            const nbConvocs = convocs.length;
+            const decalageEpreuve = decalagesEpreuves.get(codeEpreuve);
+            if (decalageEpreuve === undefined) throw new Error(`Aucun décalage trouvé pour l'épreuve ${codeEpreuve}`);
+
+            const Q = alphabet.length;
+            const decalage = [
+                1 + (decalageEpreuve % (Q - 1)), // décalage 1er caractère
+                1 + (Math.floor(decalageEpreuve / (Q - 1)) % (Q - 1)), // décalage 2e caractère
+                1 + (Math.floor(decalageEpreuve / Math.pow(Q - 1, 2)) % (Q - 1)), // décalage 3e caractère
+            ]
+
+            // Calculer la distance de Hamming optimale à appliquer
+            let distanceHamming = 1;
+            if (nbConvocs < codes[3].length) distanceHamming = 3;
+            else if (nbConvocs < codes[2].length) distanceHamming = 2;
+
+            // Récupérer les codes disponibles
+            const codesDisponibles = codes[distanceHamming as 1 | 2 | 3];
+            if (codesDisponibles === undefined) throw new Error('Distance de Hamming invalide');
+
+            // Créer les convocations (et attribuer le code d'anonymat)
+            for (const convocation of convocs) {
+                const codeAnonymat = codesDisponibles[indexCode++ % codesDisponibles.length];
+                if (codeAnonymat) newConvocations.push({
+                    ...convocation,
+                    code_anonymat: codeAnonymat + appliquerDecalage(codeAnonymat, decalage, alphabet)
+                });
+            }
+
         }
 
         await batchInsertion<EtudiantData>(transaction, 'etudiant', newEtudiants);
         await batchInsertion<EpreuveData>(transaction, 'epreuve', newEpreuves);
-        await batchInsertion<ConvocationData>(transaction, 'convocation_epreuve', newConvocations);
+        await batchInsertion<SalleData>(transaction, 'salle', newSalles);
+        await batchInsertion<ConvocationData>(transaction, 'convocation', newConvocations);
 
         // Commit la transaction
         await transaction.commit();
+
+        // Aucune erreur : mettre à jour les caches
+        for (const etudiantData of newEtudiants) {
+            etudiantCache.set(etudiantData.numero_etudiant, etudiantCache.fromDatabase(etudiantData));
+        }
+        for (const epreuveData of newEpreuves) {
+            session.epreuves.set(epreuveData.code_epreuve, session.epreuves.fromDatabase(epreuveData));
+        }
+        for (const convocationData of newConvocations) {
+            const epreuve = session.epreuves.get(convocationData.code_epreuve);
+            if (epreuve) epreuve.convocations.set(convocationData.code_anonymat, epreuve.convocations.fromDatabase(convocationData));
+        }
+        for (const salleData of newSalles) {
+            salleCache.set(salleData.code_salle, salleCache.fromDatabase(salleData));
+        }
 
         logInfo("XLSX", `Interprétation XLSX de la session ${session.id} terminée en ${Date.now() - debut} ms.`);
 

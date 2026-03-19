@@ -6,8 +6,8 @@ export interface ConvocationData {
     numero_etudiant: number,
     code_anonymat: string,
     note_quart: number | null,
-    id_salle: number,
-    rang: number | null // TODO : quand nouvelle version adapter avec le numéro de place (TEMPORAIRE !)
+    code_salle: string,
+    rang: number | null
 }
 
 export class Convocation extends ElementEnCache {
@@ -16,8 +16,8 @@ export class Convocation extends ElementEnCache {
     public numeroEtudiant: number;
     public codeAnonymat: string;
     public noteQuart: number | null;
-    public idSalle: number;
-    public rang: number | null; // TODO (TEMPORAIRE !)
+    public codeSalle: string;
+    public rang: number | null;
 
     constructor(data: ConvocationData) {
         super();
@@ -26,7 +26,7 @@ export class Convocation extends ElementEnCache {
         this.numeroEtudiant = data.numero_etudiant;
         this.codeAnonymat = data.code_anonymat;
         this.noteQuart = data.note_quart;
-        this.idSalle = data.id_salle;
+        this.codeSalle = data.code_salle;
         this.rang = data.rang;
     }
 }

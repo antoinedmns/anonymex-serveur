@@ -9,6 +9,7 @@ export interface EpreuveData {
     code_epreuve: string,
     nom: string,
     statut: number,
+    id_decalage: number,
     /* Timestamp (epoch unix) en minutes */
     date_epreuve: number,
     duree: number,
@@ -19,6 +20,7 @@ export class Epreuve extends ElementEnCache {
     public idSession: number;
     public codeEpreuve: string;
     public nom: string;
+    public idDecalage: number;
     public statut: EpreuveStatut;
     public salles: string[] = [];//todo
     public dateEpreuve: number;
@@ -36,6 +38,7 @@ export class Epreuve extends ElementEnCache {
         this.codeEpreuve = data.code_epreuve;
         this.nom = data.nom;
         this.statut = data.statut;
+        this.idDecalage = data.id_decalage;
         this.dateEpreuve = data.date_epreuve * 60; // convertir en secondes
         this.duree = data.duree;
         this.nbPresents = data.nb_presents;

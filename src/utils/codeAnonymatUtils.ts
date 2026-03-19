@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /**
  * Calcule la distance de Hamming entre deux chaînes de même longueur
  * @param a
@@ -22,8 +23,7 @@ export function indiceVersMot(index: number, length: number, alphabet: string): 
     let word = "";
     const Q = alphabet.length;
     for (let i = 0; i < length; i++) {
-        const lettre = alphabet[index % Q];
-        word = lettre + word;
+        word = alphabet[index % Q] + word;
         index = Math.floor(index / Q);
     }
     return word;
@@ -46,16 +46,7 @@ export function genererCodesHamming(
     const max = Math.pow(alphabet.length, taille);
 
     for (let i = 0; i < max && results.length < n; i++) {
-        // TEMP: on mélange l'alphabet pour equidistribution
-        let candidat = '';
-        for (let j = 0; j < taille; j++) {
-            const randomIndex = Math.floor(Math.random() * alphabet.length);
-            candidat += alphabet[randomIndex];
-        }
-
-        // TEMP AUSSI : éviter d'avoir 2 lettres identiques dans le code
-        const lettresUniques = new Set(candidat.split(""));
-        if (lettresUniques.size !== candidat.length) continue;
+        const candidat = indiceVersMot(i, taille, alphabet);
 
         let valid = true;
         for (const existing of results) {
@@ -69,4 +60,37 @@ export function genererCodesHamming(
     }
 
     return results;
+}
+
+/**
+ * Appliquer un décalage à un code d'anonymat, afin d'obtenir le code de redondance systématique.
+ * @param codeAnonymat code d'anonymat effectif
+ * @param decalage valeur de décalage (base alphabetique)
+ * @param alphabet 
+ */
+export function appliquerDecalage(codeAnonymat: string, decalages: number[], alphabet: string): string {
+    let codeRedondance = "";
+    const Q = alphabet.length;
+    for (let i = 0; i < codeAnonymat.length; i++) {
+        const indexLettre = alphabet.indexOf(codeAnonymat[i]!); // lookup table plus efficace?
+        if (indexLettre === -1) throw new Error(`Caractère '${codeAnonymat[i]}' non trouvé dans l'alphabet.`);
+        const indexDecale = (indexLettre + decalages[i]!) % Q;
+        codeRedondance += alphabet[indexDecale];
+    }
+    return codeRedondance;
+}
+
+/**
+ * Mélanger les codes
+ */
+export function melangerCodes(codes: string[]): string[] {
+    for (let i = codes.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const valueI = codes[i];
+        const valueJ = codes[j];
+        if (valueI === undefined || valueJ === undefined) continue;
+        codes[i] = valueJ;
+        codes[j] = valueI;
+    }
+    return codes;
 }

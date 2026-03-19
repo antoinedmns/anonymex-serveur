@@ -11,6 +11,7 @@ import { BenchmarkUnitaireModule } from '../generation/bordereau/modules/cadre-e
 import { detecterAprilTags } from './preparation/detecterAprilTags';
 import { matToSharp } from '../../utils/imgUtils';
 import { OpenCvInstance } from '../services/OpenCvInstance';
+import { config } from '../../config';
 
 type MimeType = 'application/pdf' | 'image/jpeg' | 'image/png';
 
@@ -48,8 +49,6 @@ export const dimensionsFormats = {
     A4: { formatWidthMm: 210, formatHeightMm: 297 },
 };
 
-const ALPHABET = "BCEFGHIKLNOPQRSTUWXYZ";
-
 // WIP : chemin deviendra buffer/busboy
 export async function lireBordereau(chemin: string, mimeType: MimeType): Promise<void> {
     const stats: BenchmarkStats = {
@@ -85,7 +84,7 @@ export async function lireBordereau(chemin: string, mimeType: MimeType): Promise
 
         const rois = new BenchmarkUnitaireModule().getZonesLecture().lettresCodeAnonymat;
 
-        await TesseractOCR.configurerModeCaractereUnique(ALPHABET);
+        await TesseractOCR.configurerModeCaractereUnique(config.codesAnonymat.alphabetCodeAnonymat);
 
         // LIRE ETIQUETTES et transformer en str
         const detections = await detecterAprilTags(scan, matToSharp(await OpenCvInstance.getInstance(), scanPret));
@@ -113,7 +112,7 @@ export async function lireBordereau(chemin: string, mimeType: MimeType): Promise
 
             const debutCNN = Date.now();
             const prediction = await TensorFlowCNN.predire(
-                await preprocessPipelines.emnist(image).png().toBuffer(), 'EMNIST-Standard', ALPHABET
+                await preprocessPipelines.emnist(image).png().toBuffer(), 'EMNIST-Standard', config.codesAnonymat.alphabetCodeAnonymat
             );
             stats.tempsTotalCNN += (Date.now() - debutCNN);
 

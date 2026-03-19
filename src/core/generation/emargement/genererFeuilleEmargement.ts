@@ -74,7 +74,7 @@ function renduPageEmargement(doc: typeof PDFDocument, noms: [string, string][], 
 
     const sess = new Session({ 'annee': 2024, 'id_session': 1, 'nom': 'Session Test', 'statut': 1 });
     sessionCache.set(1234, sess);
-    const epr = new Epreuve({ id_session: 1234, code_epreuve: 'HAI123X', nom: 'Sciences de l\'émargement', date_epreuve: new Date('2024-06-15T09:00:00').getTime() / 60000, duree: 120, nb_presents: 30, statut: 1 });
+    const epr = new Epreuve({ id_session: 1234, code_epreuve: 'HAI123X', nom: 'Sciences de l\'émargement', date_epreuve: new Date('2024-06-15T09:00:00').getTime() / 60000, duree: 120, nb_presents: 30, statut: 1, id_decalage: 1 });
     sess.epreuves.set(epr.codeEpreuve, epr);
 
     // Dessiner l'en-tête (titres, infos épreuve, lettres A-Z)
