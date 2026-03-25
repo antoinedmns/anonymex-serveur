@@ -48,7 +48,7 @@ export async function getRecherche(sessionId: string, query: string): Promise<AP
 
                     if (salles.length > 0) {
                         resultats = salles.map(s => ({
-                            type: TypeRecherche.SalleHeure,
+                            type: TypeRecherche.SALLEHEURE,
                             codeSalle: s.codeSalle,
                             horodatage: horodatageMinutes
                         }));
@@ -58,7 +58,7 @@ export async function getRecherche(sessionId: string, query: string): Promise<AP
                 // Si jamais aucune salle n'a pu être extraite de la chaine, alors on renvoie l'heure seule
                 if (resultats.length === 0) {
                     resultats = [{
-                        type: TypeRecherche.Heure,
+                        type: TypeRecherche.HEURE,
                         horodatage: horodatageMinutes
                     }];
                 }
@@ -89,7 +89,7 @@ export async function getRecherche(sessionId: string, query: string): Promise<AP
 
         if (queryAction.includes("télécharger") || queryAction.includes("bordereau")) {
             resultats.push({
-                type: TypeRecherche.Action,
+                type: TypeRecherche.ACTION,
                 action: 1
             });
         }
@@ -97,14 +97,14 @@ export async function getRecherche(sessionId: string, query: string): Promise<AP
         // Action 2 : Déposer des copies
         if (queryAction.includes("déposer") || queryAction.includes("copies")) {
             resultats.push({
-                type: TypeRecherche.Action,
+                type: TypeRecherche.ACTION,
                 action: 2
             });
         }
 
         if (queryAction.includes("changer") || queryAction.includes("session")) {
             resultats.push({
-                type: TypeRecherche.Action,
+                type: TypeRecherche.ACTION,
                 action: 3
             });
         }
