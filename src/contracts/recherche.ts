@@ -31,21 +31,21 @@ const EtudiantData = {
 
 // --- Schémas ---
 
-const RechercheSchema = z.object({
+const BaseRechercheSchema = z.object({
     type: z.enum(TypeRecherche)
 });
 
-export const RechercheUESchema = RechercheSchema.extend({
+export const RechercheUESchema = BaseRechercheSchema.extend({
     type: z.literal(TypeRecherche.UE),
     ...CodeUEData
 });
 
-export const RechercheSalleSchema = RechercheSchema.extend({
+export const RechercheSalleSchema = BaseRechercheSchema.extend({
     type: z.literal(TypeRecherche.Salle),
     ...SalleData
 });
 
-export const RechercheHeureSchema = RechercheSchema.extend({
+export const RechercheHeureSchema = BaseRechercheSchema.extend({
     type: z.literal(TypeRecherche.Heure),
     ...HeureData
 });
@@ -56,12 +56,12 @@ export const RechercheSalleHeureSchema = RechercheSalleSchema.extend({
     ...HeureData
 });
 
-export const RechercheActionSchema = RechercheSchema.extend({
+export const RechercheActionSchema = BaseRechercheSchema.extend({
     type: z.literal(TypeRecherche.Action),
     ...ActionData
 })
 
-export const RechercheEtudiantSchema = RechercheSchema.extend({
+export const RechercheEtudiantSchema = BaseRechercheSchema.extend({
     type: z.literal(TypeRecherche.Etudiant),
     ...EtudiantData
 })
