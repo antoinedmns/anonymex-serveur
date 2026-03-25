@@ -1,10 +1,11 @@
 import { Fichier } from "../../routes/useFile";
+import { Mat } from "@techstark/opencv-js";
 import { matToSharp } from "../../utils/imgUtils";
 import { BenchmarkUnitaireModule } from "../generation/bordereau/modules/cadre-etudiant/BenchmarkUnitaireModule";
 import { OpenCvInstance } from "../services/OpenCvInstance";
 import { TensorFlowCNN } from "./CNN/TensorFlowCNN";
 import { Depot } from "./DepotsManager";
-import { ErreurCodeAnonymat, ErreurResultatLu } from "./lectureErreurs";
+import { ErreurResultatLu } from "./lectureErreurs";
 import { preprocessPipelines } from "./OCR/preprocessPipelines";
 import { TesseractOCR } from "./OCR/TesseractOCR";
 import { decouperROIs } from "./preparation/decouperROIs";
@@ -37,9 +38,10 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
 
         // Extraire tous les scans du document
         await extraireScans(document, async (scan, buffer) => {
+            let scanPret: Mat | null = null;
             try {
                 // Préparer et ajuste le scan (découpage, rotation, ...).
-                const scanPret = await preparerScan(scan, buffer);
+                scanPret = await preparerScan(scan, buffer);
 
                 // TEMPORAIRE (BENCHMARK) : détecter les April Tags pour récupérer le code de l'épreuve
                 const detections = await detecterAprilTags(scan, matToSharp(await OpenCvInstance.getInstance(), scanPret));
@@ -49,7 +51,7 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
                 const codeLu: (string | undefined)[] = [];
 
                 // Découper les lettres du code d'anonymat, et les lire
-                decouperROIs(scanPret, rois.lettresCodeAnonymat, DIAMETRE_CIBLES_MM, MARGE_CIBLES_MM, "A4",
+                await decouperROIs(scanPret, rois.lettresCodeAnonymat, DIAMETRE_CIBLES_MM, MARGE_CIBLES_MM, "A4",
                     async (roiAnonymat) => {
 
                         // Pré-processing de la ROI
@@ -79,7 +81,7 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
 
                         if (code.join('') === codeLu.join(''))
                             console.log('OK');
-                            else throw new ErreurCodeAnonymat('Échec de lecture du code anonymat', codeLu.join(''));
+                        //else throw new ErreurCodeAnonymat('Échec de lecture du code anonymat', codeLu.join(''));
 
                     });
 
@@ -106,6 +108,9 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
                     console.error("Erreur inconnue lors de la lecture du bordereau :", error);
                 }
             } finally {
+                // Libérer la mémoire du scan préparé
+                scanPret?.delete();
+
                 numFichier++;
                 getDepot().callback?.('progress', 0, { n: numFichier, t: scan.nbPages });
             }

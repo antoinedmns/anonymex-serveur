@@ -96,22 +96,31 @@ export async function realignerCorrigerScan(image: sharp.Sharp, detections: (nul
 
     const srcMat = ptsToMat32FC2(srcPts);
     const dstMat = ptsToMat32FC2(dst0);
-
     const dstMatImg = new cv.Mat(size.height, size.width, cv.CV_8UC3);
 
-    if (srcPts.length === 4) {
-        // Homographie
-        const H = cv.getPerspectiveTransform(srcMat, dstMat);
-        cv.warpPerspective(mat, dstMatImg, H, size, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(255, 255, 255, 255));
-
-        // libérer la mémoire
+    let transformationOk = false;
+    try {
+        if (srcPts.length === 4) {
+            // Homographie
+            const H = cv.getPerspectiveTransform(srcMat, dstMat);
+            try {
+                cv.warpPerspective(mat, dstMatImg, H, size, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(255, 255, 255, 255));
+                transformationOk = true;
+            } finally {
+                H.delete();
+            }
+        } else if (srcPts.length === 3) {
+            // TODO: affine ou estimation du 4e point et homographie
+            throw new ErreurRealignement(`Transformation affine pas encore implémentée. Les 4 coins doivent être visibles.`);
+        }
+    } finally {
         mat.delete();
         srcMat.delete();
         dstMat.delete();
-        H.delete();
-    } else if (srcPts.length === 3) {
-        // TODO: affine ou estimation du 4e point et homographie
-        throw new ErreurRealignement(`Transformation affine pas encore implémentée. Les 4 coins doivent être visibles.`);
+
+        if (!transformationOk) {
+            dstMatImg.delete();
+        }
     }
 
     // Visualisations debug (Sharp uniquement pour le debug)
