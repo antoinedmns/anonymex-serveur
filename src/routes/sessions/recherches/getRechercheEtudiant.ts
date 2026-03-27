@@ -1,7 +1,7 @@
-import { EpreuveData } from "../../../cache/epreuves/Epreuve";
+import { sessionCache } from "../../../cache/sessions/SessionCache";
 import { APIEpreuve } from "../../../contracts/epreuves";
 import { Database } from "../../../core/services/database/Database";
-import { ErreurRequeteInvalide } from "../../erreursApi";
+import { ErreurRequeteInvalide, ErreurServeur } from "../../erreursApi";
 
 export async function getRechercheEtudiant(sessionId: string, numero: string): Promise<APIEpreuve[]> {
 
@@ -16,15 +16,25 @@ export async function getRechercheEtudiant(sessionId: string, numero: string): P
         throw new ErreurRequeteInvalide("Le numéro de l'étudiant est invalide.");
     }
 
-    const epreuves = await Database.query<EpreuveData>("SELECT DISTINCT e.* FROM epreuve e JOIN convocation c ON e.id_session = c.id_session AND e.code_epreuve = c.code_epreuve WHERE c.id_session = ? AND c.numero_etudiant = ?;", [idSession, numeroEtudiant]);
+    const resultats = await Database.query<{ idSession: number, codeEpreuve: string }>("SELECT DISTINCT e.id_session as idSession, e.code_epreuve as codeEpreuve FROM epreuve e JOIN convocation c ON e.id_session = c.id_session AND e.code_epreuve = c.code_epreuve WHERE c.id_session = ? AND c.numero_etudiant = ?;", [idSession, numeroEtudiant]);
 
-    return epreuves.map(epreuve => ({
-        session: epreuve.id_session,
-        code: epreuve.code_epreuve,
-        nom: epreuve.nom,
-        statut: epreuve.statut,
-        date: epreuve.date_epreuve,
-        duree: epreuve.duree,
-        salles: []
-    }));
+    const epreuves: APIEpreuve[] = [];
+
+    for (const resultat of resultats) {
+        const session = await sessionCache.getOrFetch(resultat.idSession);
+        
+        if (!session) {
+            throw new ErreurServeur(`La session d'id : ${resultat.idSession} n'existe pas.`);
+        }
+
+        const epreuve = await session.epreuves.getOrFetch(resultat.codeEpreuve);
+        
+        if (!epreuve) {
+            throw new ErreurServeur(`L'épreuve de code : ${resultat.codeEpreuve} n'existe pas.`);
+        }
+
+        epreuves.push(epreuve.toJSON());
+    }
+
+    return epreuves;
 }
