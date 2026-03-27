@@ -11,25 +11,21 @@ export async function getRechercheSalle(sessionId: string, codeSalle: string): P
         throw new ErreurRequeteInvalide("L'ID de la session est invalide");
     }
 
-    const resultats = await Database.query<{ idSession: number, codeEpreuve: string}>("SELECT DISTINCT e.id_session as idSession, e.code_epreuve as codeEpreuve FROM epreuve e JOIN convocation c ON e.id_session = c.id_session AND e.code_epreuve = c.code_epreuve WHERE c.id_session = ? AND code_salle = ?;", [idSession, codeSalle]);
+    const resultats = await Database.query<{ codeEpreuve: string }>("SELECT DISTINCT e.code_epreuve as codeEpreuve FROM epreuve e JOIN convocation c ON e.id_session = c.id_session AND e.code_epreuve = c.code_epreuve WHERE c.id_session = ? AND code_salle = ?;", [idSession, codeSalle]);
 
-    const epreuves: APIEpreuve[] = [];
+    const codesEpreuves = resultats.map(resultat => resultat.codeEpreuve);
 
-   for (const resultat of resultats) {
-        const session = await sessionCache.getOrFetch(resultat.idSession);
-        
-        if (!session) {
-            throw new ErreurServeur(`La session d'id : ${resultat.idSession} n'existe pas.`);
-        }
+    const session = await sessionCache.getOrFetch(idSession);
 
-        const epreuve = await session.epreuves.getOrFetch(resultat.codeEpreuve);
-        
-        if (!epreuve) {
-            throw new ErreurServeur(`L'épreuve de code : ${resultat.codeEpreuve} n'existe pas.`);
-        }
-
-        epreuves.push(epreuve.toJSON());
+    if (!session) {
+        throw new ErreurServeur(`La session d'id : ${idSession} n'existe pas.`);
     }
+
+    const toutesLesEpreuves = await session.epreuves.getAll();
+
+    const epreuves = toutesLesEpreuves
+        .filter(epreuve => codesEpreuves.includes(epreuve.codeEpreuve))
+        .map(epreuve => epreuve.toJSON())
 
     return epreuves;
 }
