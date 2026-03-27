@@ -3,20 +3,21 @@ import { APIRechercheReponse, APIListRecherche, TypeRecherche, ListRechercheSche
 import { Database } from "../../../core/services/database/Database";
 import { etudiantCache } from '../../../cache/etudiants/EtudiantCache';
 import { salleCache } from '../../../cache/salles/SalleCache';
+import { ErreurServeur } from '../../erreursApi';
 
 export async function getRecherche(sessionId: string, query: string): Promise<APIListRecherche> {
 
     const idSession = parseInt(sessionId ?? '');
 
     if (isNaN(idSession)) {
-        throw new Error("L'id de la session est invalide.");
+        throw new ErreurServeur("L'id de la session est invalide.");
     }
 
     const queryBrute = query.trim(); // On récupère la recherche en supprimant les caractères parasites
 
     // Recherche par UE (priorité 1)
     const ues = await Database.query<{ code_epreuve: string }>(
-        "SELECT code_epreuve FROM epreuve WHERE id_session = ? AND code_epreuve LIKE ?;",
+        "SELECT code_epreuve FROM epreuve WHERE id_session = ? AND code_epreuve LIKE ? LIMIT 10;",
         [idSession, `${queryBrute}%`]
     );
 
@@ -31,7 +32,7 @@ export async function getRecherche(sessionId: string, query: string): Promise<AP
 
     // Recherche par salle et/ou date (priorité 2 & 3)
     const parseDate = chrono.fr.parse(queryBrute)[0]; // On extrait la date grâce à chrono-node (on prend le premier résultat renvoyé)
-    
+
     // Si jamais on a réussi à extraire une date, alors on la met de côté
     const horodatageMinutes = parseDate
         ? Math.floor(parseDate.start.date().getTime() / 60000).toString() // On transforme la date en timestamp
@@ -52,7 +53,7 @@ export async function getRecherche(sessionId: string, query: string): Promise<AP
         } else {
             // Tentative de recherche via la base de données
             const sallesEnDB = await Database.query<{ code_salle: string }>(
-                "SELECT code_salle FROM salle WHERE code_salle LIKE ?;",
+                "SELECT code_salle FROM salle WHERE code_salle LIKE ? LIMIT 10;",
                 [`${salleExtraite}%`]
             );
             codesSalles = sallesEnDB.map(salle => salle.code_salle);
@@ -92,17 +93,22 @@ export async function getRecherche(sessionId: string, query: string): Promise<AP
     }
 
     // Recherche par étudiant (priorité 4)
-    const etudiant = await etudiantCache.getOrFetch(parseInt(queryBrute));
+    const numeroEtudiant = parseInt(queryBrute ?? '');
 
-    if (etudiant != undefined) {
-        return {
-            resultats: [{
-                type: TypeRecherche.ETUDIANT,
-                numero: etudiant.numeroEtudiant
-            }]
-        };
+    if (!isNaN(numeroEtudiant)) {
+
+        const etudiant = await etudiantCache.getOrFetch(parseInt(queryBrute));
+
+        if (etudiant != undefined) {
+            return {
+                resultats: [{
+                    type: TypeRecherche.ETUDIANT,
+                    numero: etudiant.numeroEtudiant
+                }]
+            };
+        }
     }
-
+    
     // Recherche par action (priorité 5)
     const queryAction = queryBrute.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // On nettoie la recherche pour supprimer les accents
 

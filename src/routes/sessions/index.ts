@@ -14,7 +14,7 @@ const sessionsRouter = Router();
 sessionsRouter.use("/:session/epreuves", epreuvesRouter);
 
 // Recherches
-sessionsRouter.use("/:session/recherches", recherchesRouteur);
+sessionsRouter.use("/:session/recherche", recherchesRouteur);
 
 // GET /sessions/
 sessionsRouter.get("/", (req, res) =>
