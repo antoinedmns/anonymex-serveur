@@ -16,13 +16,13 @@ export async function getRechercheEtudiant(sessionId: string, numero: string): P
         throw new ErreurRequeteInvalide("Le numéro de l'étudiant est invalide.");
     }
 
-    const resultats = await Database.query<{ codeEpreuve: string }>("SELECT DISTINCT e.id_session as idSession, e.code_epreuve as codeEpreuve FROM epreuve e JOIN convocation c ON e.id_session = c.id_session AND e.code_epreuve = c.code_epreuve WHERE c.id_session = ? AND c.numero_etudiant = ?;", [idSession, numeroEtudiant]);
-
     const session = await sessionCache.getOrFetch(idSession);
 
     if (!session) {
         throw new ErreurServeur(`La session d'id : ${idSession} n'existe pas.`);
     }
+
+    const resultats = await Database.query<{ codeEpreuve: string }>("SELECT DISTINCT e.id_session as idSession, e.code_epreuve as codeEpreuve FROM epreuve e JOIN convocation c ON e.id_session = c.id_session AND e.code_epreuve = c.code_epreuve WHERE c.id_session = ? AND c.numero_etudiant = ?;", [idSession, numeroEtudiant]);
 
     await session.epreuves.getAll();
 

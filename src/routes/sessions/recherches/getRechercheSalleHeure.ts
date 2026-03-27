@@ -16,13 +16,13 @@ export async function getRechercheSalleHeure(sessionId: string, codeSalle: strin
         throw new ErreurRequeteInvalide("L'horodatage est invalide.");
     }
 
-    const resultats = await Database.query<{ codeEpreuve: string }>("SELECT DISTINCT e.code_epreuve as codeEpreuve FROM epreuve e JOIN convocation c ON e.id_session = c.id_session AND e.code_epreuve = c.code_epreuve WHERE c.id_session = ? AND code_salle = ? AND e.date_epreuve = ?;", [idSession, codeSalle, date]);
-
-   const session = await sessionCache.getOrFetch(idSession);
+    const session = await sessionCache.getOrFetch(idSession);
 
     if (!session) {
         throw new ErreurServeur(`La session d'id : ${idSession} n'existe pas.`);
     }
+
+    const resultats = await Database.query<{ codeEpreuve: string }>("SELECT DISTINCT e.code_epreuve as codeEpreuve FROM epreuve e JOIN convocation c ON e.id_session = c.id_session AND e.code_epreuve = c.code_epreuve WHERE c.id_session = ? AND code_salle = ? AND e.date_epreuve = ?;", [idSession, codeSalle, date]);
 
     await session.epreuves.getAll();
 
