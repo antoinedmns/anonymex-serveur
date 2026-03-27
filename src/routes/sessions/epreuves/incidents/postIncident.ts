@@ -1,13 +1,7 @@
 import { IncidentData } from "../../../../cache/epreuves/incidents/Incident";
 import { sessionCache } from "../../../../cache/sessions/SessionCache";
 import { APIReponseCorrectionIncident } from "../../../../contracts/incidents";
-import { MediaService } from "../../../../core/services/MediaService";
-import { logWarn } from "../../../../utils/logger";
 import { ErreurRequeteInvalide, ErreurServeur } from "../../../erreursApi";
-
-const handleScanIntrouvable = (idIncident: number) => {
-    logWarn("postIncident", `Impossible de supprimer le scan de l'incident ${idIncident}. Le fichier n'existe peut-être plus.`);
-};
 
 export async function postIncident(sessionId: string, codeEpreuve: string, incidentId: string, codeAnonymat?: string, noteQuart?: string): Promise<APIReponseCorrectionIncident> {
 
@@ -67,11 +61,10 @@ export async function postIncident(sessionId: string, codeEpreuve: string, incid
 
         // Remplacer la copie corrigée
         convocation.noteQuart = quartNote;
-        await epreuve.convocations.update(convocation.codeAnonymat, convocation);
+        await epreuve.convocations.update(convocation.codeAnonymat, { note_quart: convocation.noteQuart });
 
         // Supprimer l'incident courant
         await epreuve.incidents.delete(idIncident);
-        await MediaService.supprimerMedia('incidents/', `${idIncident}.webp`).catch(() => handleScanIntrouvable(idIncident));
 
         return {
             success: true,
@@ -82,9 +75,8 @@ export async function postIncident(sessionId: string, codeEpreuve: string, incid
 
     // Corriger l'incident normalement
     convocation.noteQuart = quartNote;
-    await epreuve.convocations.update(convocation.codeAnonymat, convocation);
+    await epreuve.convocations.update(convocation.codeAnonymat, { note_quart: convocation.noteQuart });
     await epreuve.incidents.delete(idIncident);
-    await MediaService.supprimerMedia('incidents/', `${idIncident}.webp`).catch(() => handleScanIntrouvable(idIncident));
 
     return {
         success: true
