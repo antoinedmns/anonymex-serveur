@@ -3,7 +3,7 @@ import { Mat } from "@techstark/opencv-js";
 import { ErreurRealignement } from "../lectureErreurs";
 import { visualiserGeometrieAncrage } from "../../../core/debug/visualiseurs/visualiserGeometrieAncrage";
 import { visualiserRegionsOfInterests } from "../../../core/debug/visualiseurs/visualiserRegionsOfInterests";
-import { CadreEtudiantBenchmarkModule } from "../../generation/bordereau/modules/cadre-etudiant/CadreEtudiantBenchmarkModule";
+import { CadreEtudiantBenchmarkModule } from "../../generation/bordereau-test/modules/cadre-etudiant/CadreEtudiantBenchmarkModule";
 import { OpenCvInstance } from "../../../core/services/OpenCvInstance";
 import { dimensionsFormats } from "../lireBordereau";
 import { matToSharp } from "../../../utils/imgUtils";

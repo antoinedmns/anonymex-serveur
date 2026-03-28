@@ -1,7 +1,7 @@
 import { Fichier } from "../../routes/useFile";
 import { Mat } from "@techstark/opencv-js";
 //import { matToSharp } from "../../utils/imgUtils";
-import { BenchmarkUnitaireModule } from "../generation/bordereau/modules/cadre-etudiant/BenchmarkUnitaireModule";
+import { BenchmarkUnitaireModule } from "../generation/bordereau-test/modules/cadre-etudiant/BenchmarkUnitaireModule";
 //import { OpenCvInstance } from "../services/OpenCvInstance";
 import { TensorFlowCNN } from "./CNN/TensorFlowCNN";
 import { Depot } from "./DepotsManager";

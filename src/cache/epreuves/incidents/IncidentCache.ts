@@ -58,17 +58,15 @@ export class IncidentCache extends DatabaseCacheBase<number /*id*/, Incident, In
 
         const base = `SELECT code_anonymat FROM convocation 
                        WHERE code_epreuve = ? AND id_session = ?`;
-        const params = [this.codeEpreuve, this.idSession];
+        const paramsBase = [this.codeEpreuve, this.idSession];
 
         // Chercher en place des '?'
         const estPartiel = codeAnonymatPartiel.includes('?');
         if (estPartiel) {
             // Remplacer les '?' par des '_' pour la requête SQL
             const codeAnonymatSQL = codeAnonymatPartiel.replace(/\?/g, '_');
-            params.push(codeAnonymatSQL);
-            base.concat(" AND code_anonymat LIKE ? LIMIT 5");
-
-            const resPartiel = await Database.query<{ code_anonymat: string }>(base, params);
+            const sqlPartiel = base + " AND code_anonymat LIKE ? LIMIT 5";
+            const resPartiel = await Database.query<{ code_anonymat: string }>(sqlPartiel, [...paramsBase, codeAnonymatSQL]);
             if (resPartiel.length > 0) {
                 return resPartiel.map(r => r.code_anonymat);
             }
@@ -80,7 +78,7 @@ export class IncidentCache extends DatabaseCacheBase<number /*id*/, Incident, In
 
         // Récupérer les codes anonymat complets en fonction du préfix/suffix
         const prefSufSQL = base + " AND (code_anonymat LIKE ? OR code_anonymat LIKE ?) LIMIT 3";
-        const resPrefSuf = await Database.query<{ code_anonymat: string }>(prefSufSQL, [...params, `${prefix}%`, `%${suffix}`]);
+        const resPrefSuf = await Database.query<{ code_anonymat: string }>(prefSufSQL, [...paramsBase, `${prefix}%`, `%${suffix}`]);
 
         return resPrefSuf.map(r => r.code_anonymat);
     }

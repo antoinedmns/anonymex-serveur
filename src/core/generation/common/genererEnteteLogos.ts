@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { MediaService } from "../../services/MediaService";
+import { ImagesImportsCache } from "../../../cache/ImagesImportsCache";
 
 /**
  * Will draw the header with the university and faculty logos on the given PDF document, centered.
@@ -7,13 +6,32 @@ import { MediaService } from "../../services/MediaService";
  * @param height 
  * @param width 
  */
-export async function genererEnteteLogos(doc: PDFKit.PDFDocument, height: number, width: number): Promise<void> {
+export async function genererEnteteLogos(doc: PDFKit.PDFDocument): Promise<void> {
 
-    /*const logoUniversite = await MediaService.getCachedMedia("imports", "logo_universite.png", false);
-    const logoFaculte = await MediaService.getCachedMedia("imports", "logo_faculte.png", false);
+    const { universite, faculte } = await ImagesImportsCache.getLogos();
+    const margeHaut = 30;
 
-    if (logoUniversite && logoUniversite[0]) {
-        doc.image(logoUniversite[0], width / 2 - 150 - 10, height / 2 - 50, { width: 150 });
-    }*/
+    const noLogo = (x: number, y: number, nom: string) => {
+        doc.fillColor("#DDD").rect(x, y, 200, 60).fill();
+        doc.fillColor("#000").fontSize(13).text(`Aucun visuel pour ${nom}\nimporté via les paramètres (accueil)`, x + 5, y + 5);
+    };
+
+    const univTaille = universite ? universite.width : 200;
+    const facTaille = faculte ? faculte.width : 200;
+    const totalTaille = univTaille + facTaille + 10; // 10pt d'espace entre les deux
+
+    if (universite) {
+        const x = (doc.page.width - totalTaille) / 2;
+        doc.image(universite.buffer, x, margeHaut, { width: universite.width, height: universite.height });
+    } else {
+        noLogo((doc.page.width - totalTaille) / 2, margeHaut, "l'université");
+    }
+
+    if (faculte) {
+        const x = (doc.page.width - totalTaille) / 2 + univTaille + 10; // 10pt d'espace entre les deux
+        doc.image(faculte.buffer, x, margeHaut, { width: faculte.width, height: faculte.height });
+    } else {
+        noLogo((doc.page.width - totalTaille) / 2 + univTaille + 10, margeHaut, "la faculté");
+    }
 
 }

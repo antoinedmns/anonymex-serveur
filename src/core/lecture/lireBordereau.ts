@@ -7,7 +7,7 @@ import { ErreurDecoupeROIs } from './lectureErreurs';
 import { preprocessPipelines } from './OCR/preprocessPipelines';
 import { TesseractOCR } from './OCR/TesseractOCR';
 import { TensorFlowCNN } from './CNN/TensorFlowCNN';
-import { BenchmarkUnitaireModule } from '../generation/bordereau/modules/cadre-etudiant/BenchmarkUnitaireModule';
+import { BenchmarkUnitaireModule } from '../generation/bordereau-test/modules/cadre-etudiant/BenchmarkUnitaireModule';
 import { detecterAprilTags } from './preparation/detecterAprilTags';
 import { matToSharp } from '../../utils/imgUtils';
 import { OpenCvInstance } from '../services/OpenCvInstance';

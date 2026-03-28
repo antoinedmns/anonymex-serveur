@@ -3,10 +3,5 @@ import { genererBordereau } from "../../core/generation/bordereau/genererBordere
 
 export async function getBordereau(res: Response): Promise<void> {
     // Générer le bordereau
-    genererBordereau({
-        format: "A4",
-        longueurCodeAnonymat: 6,
-        longueurCodeEpreuve: 0,
-        version: 1
-    }, res);
+    await genererBordereau(res);
 }
