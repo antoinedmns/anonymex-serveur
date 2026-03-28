@@ -4,6 +4,7 @@ import { logWarn } from "../../../utils/logger";
 import { DatabaseCacheBase } from "../../base/DatabaseCacheBase";
 import { Incident, IncidentData } from "./Incident";
 import { Database } from "../../../core/services/database/Database";
+import { sessionCache } from "../../sessions/SessionCache";
 
 export class IncidentCache extends DatabaseCacheBase<number /*id*/, Incident, IncidentData> {
 
@@ -48,25 +49,40 @@ export class IncidentCache extends DatabaseCacheBase<number /*id*/, Incident, In
      * @returns Une liste de suggestions de code anonymat complétés.
      */
     async suggererCodesAnonymat(codeAnonymatPartiel: string): Promise<string[]> {
+        const epreuve = sessionCache.get(this.idSession)?.epreuves.get(this.codeEpreuve);
+        if (epreuve === undefined) return [];
+
+        // Le code est déjà complet, renvoyer vide
+        await epreuve.convocations.getAll();
+        if (epreuve.convocations.get(codeAnonymatPartiel) !== undefined) return [];
+
+        const base = `SELECT code_anonymat FROM convocation 
+                       WHERE code_epreuve = ? AND id_session = ?`;
+        const params = [this.codeEpreuve, this.idSession];
+
+        // Chercher en place des '?'
+        const estPartiel = codeAnonymatPartiel.includes('?');
+        if (estPartiel) {
+            // Remplacer les '?' par des '_' pour la requête SQL
+            const codeAnonymatSQL = codeAnonymatPartiel.replace(/\?/g, '_');
+            params.push(codeAnonymatSQL);
+            base.concat(" AND code_anonymat LIKE ? LIMIT 5");
+
+            const resPartiel = await Database.query<{ code_anonymat: string }>(base, params);
+            if (resPartiel.length > 0) {
+                return resPartiel.map(r => r.code_anonymat);
+            }
+        }
+
         // Chercher les 3 premiers caractères et 3 derniers caractères du code anonymat NON partiel
         const prefix = codeAnonymatPartiel.slice(0, 3);
         const suffix = codeAnonymatPartiel.slice(-3);
 
-        const query = `SELECT code_anonymat FROM convocation 
-                       WHERE code_epreuve = ? AND id_session = ? 
-                       AND code_anonymat LIKE ? AND code_anonymat LIKE ?`;
-        const params = [this.codeEpreuve, this.idSession, `${prefix}%`, `%${suffix}`];
+        // Récupérer les codes anonymat complets en fonction du préfix/suffix
+        const prefSufSQL = base + " AND (code_anonymat LIKE ? OR code_anonymat LIKE ?) LIMIT 3";
+        const resPrefSuf = await Database.query<{ code_anonymat: string }>(prefSufSQL, [...params, `${prefix}%`, `%${suffix}`]);
 
-        const resStrict = await Database.query<{ code_anonymat: string }>(query, params);
-        if (resStrict.length > 0) {
-            return resStrict.map(r => r.code_anonymat);
-        }
-
-        // Rien trouvé ? Rechercher en remplaçant les '?' par des caractères génériques SQL
-        const codeAnonymatSQL = codeAnonymatPartiel.replace(/\?/g, '_');
-        const resFuzzy = await Database.query<{ code_anonymat: string }>(query, [this.codeEpreuve, this.idSession, codeAnonymatSQL, codeAnonymatSQL]);
-        return resFuzzy.map(r => r.code_anonymat);
-
+        return resPrefSuf.map(r => r.code_anonymat);
     }
 
     fromDatabase(data: IncidentData): Incident {
