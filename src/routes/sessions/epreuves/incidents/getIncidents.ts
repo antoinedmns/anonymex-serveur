@@ -14,7 +14,7 @@ export async function getIncidents(sessionId: string, codeEpreuve: string): Prom
         throw new ErreurRequeteInvalide("La session demandée n'existe pas.");
     }
 
-    const epreuve = session.epreuves.get(codeEpreuve);
+    const epreuve = await session.epreuves.getOrFetch(codeEpreuve);
     if (epreuve === undefined) {
         throw new ErreurRequeteInvalide("L'épreuve demandée n'existe pas.");
     }

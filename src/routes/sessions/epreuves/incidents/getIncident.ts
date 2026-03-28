@@ -18,7 +18,7 @@ export async function getIncident(sessionId: string, codeEpreuve: string, incide
         throw new ErreurRequeteInvalide("La session passée n'existe pas.");
     }
 
-    const epreuve = session.epreuves.get(codeEpreuve);
+    const epreuve = await session.epreuves.getOrFetch(codeEpreuve);
     if (epreuve === undefined) {
         throw new ErreurRequeteInvalide("L'épreuve demandée n'existe pas.");
     }
