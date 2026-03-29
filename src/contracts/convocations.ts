@@ -15,7 +15,7 @@ export const ListConvocationsSchema = z.object({
     convocations: z.array(ConvocationSchema)
 });
 
-export const UpdateConvocationSchema = ConvocationSchema.pick({ rang: true, noteQuart: true, codeSalle: true });
+export const UpdateConvocationSchema = ConvocationSchema.pick({ rang: true, noteQuart: true, codeSalle: true }).partial();
 
 // --- Types ---
 export type APIConvocation = z.infer<typeof ConvocationSchema>;
