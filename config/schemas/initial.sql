@@ -72,7 +72,7 @@ CREATE TABLE salle (
 CREATE TABLE convocation (
     id_session INT UNSIGNED NOT NULL,
     code_epreuve CHAR(10) NOT NULL,
-    numero_etudiant INT UNSIGNED NOT NULL,
+    numero_etudiant INT UNSIGNED,
     rang SMALLINT UNSIGNED,
     code_anonymat CHAR(6) NOT NULL,
     note_quart TINYINT UNSIGNED,

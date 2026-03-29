@@ -206,8 +206,10 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
 
         // Attribuer les codes d'anonymat aux convocations, par code d'épreuve
         for (const [codeEpreuve, convocs] of convocationsEpreuves.entries()) {
+            const salles = new Map<string, number>(); // code salle => nb. convocs dans cette salle
             const nbConvocs = convocs.length;
             const decalageEpreuve = decalagesEpreuves.get(codeEpreuve);
+
             if (decalageEpreuve === undefined) throw new Error(`Aucun décalage trouvé pour l'épreuve ${codeEpreuve}`);
 
             const Q = alphabet.length;
@@ -228,6 +230,11 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
 
             // Créer les convocations (et attribuer le code d'anonymat)
             for (const convocation of convocs) {
+
+                // Ajouter la salle à la liste
+                const etudiantsSalle = salles.get(convocation.code_salle) ?? 0;
+                salles.set(convocation.code_salle, etudiantsSalle + 1);
+
                 const codeAnonymat = codesDisponibles.codes[indexCode++ % codesDisponibles.codes.length];
                 if (codeAnonymat) newConvocations.push({
                     ...convocation,
@@ -235,20 +242,26 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
                 });
             }
 
-            // Créer les convocations sur la plage réservée
-            // 5% du nombre de convocations : Minimum 5, maximum 20
-            /*const nbConvocsReservees = Math.min(5, Math.max(20, Math.round(convocs.length * 0.05)));
-            for (let i = 0; i++; i < nbConvocsReservees) {
-                const codeAnonymat = codesDisponibles.reserve[indexCode++ % codesDisponibles.reserve.length];
-                if (codeAnonymat) newConvocations.push({
-                    id_session: session.id,
-                    code_epreuve: codeEpreuve,
-                    numero_etudiant: null,
-                    note_quart: null,
-                    code_salle: 
-                    code_anonymat: codeAnonymat + appliquerDecalage(codeAnonymat, decalage, alphabet)
-                });
-            }*/
+            for (const [codeSalle, nbEtudiants] of salles) {
+
+                // Créer les convocations sur la plage réservée
+                // 5% du nombre de convocations : Minimum 5 (ou nb. etudiants si < 5), maximum 20
+                const nbConvocsReservees = Math.max(Math.min(5, nbEtudiants), Math.min(20, Math.round(nbEtudiants * 0.05)));
+
+                for (let i = 0; i < nbConvocsReservees; i++) {
+                    const codeAnonymat = codesDisponibles.reserve[indexCode++ % codesDisponibles.reserve.length];
+                    if (codeAnonymat) newConvocations.push({
+                        id_session: session.id,
+                        code_epreuve: codeEpreuve,
+                        numero_etudiant: null,
+                        note_quart: null,
+                        code_salle: codeSalle,
+                        rang: null,
+                        code_anonymat: codeAnonymat + appliquerDecalage(codeAnonymat, decalage, alphabet)
+                    });
+                }
+
+            }
 
         }
 

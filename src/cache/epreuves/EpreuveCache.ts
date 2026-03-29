@@ -1,5 +1,7 @@
 import { Database } from "../../core/services/database/Database";
+import { logInfo, styles } from "../../utils/logger";
 import { DatabaseCacheBase } from "../base/DatabaseCacheBase";
+import { ConvocationData } from "./convocations/Convocation";
 import { Epreuve, EpreuveData } from "./Epreuve";
 import { IncidentData } from "./incidents/Incident";
 
@@ -49,10 +51,23 @@ export class EpreuveCache extends DatabaseCacheBase<string /*code*/, Epreuve, Ep
             epreuve.incidents.set(incident.id_incident, epreuve.incidents.fromDatabase(incident));
         }
 
+        const convocsPackets = await Database.query<ConvocationData>('SELECT * FROM convocation WHERE id_session = ?', [this.idSession]);
+        for (const convoc of convocsPackets) {
+            const epreuve = this.get(convoc.code_epreuve);
+            if (!epreuve) continue;
+
+            // Mettre la convocation en cache
+            epreuve.convocations.set(convoc.code_anonymat, epreuve.convocations.fromDatabase(convoc));
+        }
+
         // Marquer les données comme synchronisées
         for (const epreuve of res) {
             epreuve.incidents['tousRecuperes'] = true;
+            epreuve.convocations['tousRecuperes'] = true;
         }
+
+        logInfo('Incidents', styles.fg.cyan + incidentsPackets.length + styles.fg.white + ' incidents mis en cache.');
+        logInfo('Convocations', styles.fg.cyan + convocsPackets.length + styles.fg.white + ' convocations mis en cache.');
 
         return res;
     }
