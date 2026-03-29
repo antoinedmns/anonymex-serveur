@@ -26,15 +26,22 @@ export async function patchConvocationSupplementaire(sessionId: string, epreuveC
 
     const session = await sessionCache.getOrFetch(idSession);
     if (!session) {
-        throw new ErreurRequeteInvalide("La session demandé n'existe pas.");
+        throw new ErreurRequeteInvalide("La session demandée n'existe pas.");
     }
 
     const epreuve = await session.epreuves.getOrFetch(epreuveCode);
     if (!epreuve) {
-        throw new ErreurRequeteInvalide("L'épreuve demandé n'existe pas.");
+        throw new ErreurRequeteInvalide("L'épreuve demandée n'existe pas.");
     }
 
-    const resultats = await Database.query<{ code: string }>("SELECT c.code_anonymat as code FROM convocation c WHERE c.numero_etudiant = ? AND c.id_session = ? AND c.code_epreuve = ?;", [numeroEtudiant, idSession, epreuveCode]);
+    const nouvelleConvoc = epreuve.convocations.convocationsSupplementaires.get(codeAnonymat);
+    if (!nouvelleConvoc) {
+        throw new ErreurRequeteInvalide("La convocation demandée n'existe pas, ou est déjà assignée.");
+    }
+
+    const resultats = await Database.query<{ code: string }>
+        ("SELECT c.code_anonymat as code FROM convocation c WHERE c.numero_etudiant = ? AND c.id_session = ? "
+            + "AND c.code_epreuve = ?;", [numeroEtudiant, idSession, epreuveCode]);
 
     const ancienCode = resultats[0]?.code;
 
@@ -48,9 +55,9 @@ export async function patchConvocationSupplementaire(sessionId: string, epreuveC
         await epreuve.convocations.delete(ancienCode);
     }
 
-    const nouvelleAssignation = await epreuve.convocations.update(codeAnonymat, {
-        numero_etudiant: numeroEtudiant
-    });
+    nouvelleConvoc.numeroEtudiant = numeroEtudiant;
+    epreuve.convocations.set(codeAnonymat, nouvelleConvoc);
+    const nouvelleAssignation = await epreuve.convocations.update(codeAnonymat, { numero_etudiant: numeroEtudiant });
 
     return { success: nouvelleAssignation.affectedRows > 0 };
 }

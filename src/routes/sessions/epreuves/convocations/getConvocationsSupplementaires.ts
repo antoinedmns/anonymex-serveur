@@ -1,8 +1,8 @@
 import { sessionCache } from "../../../../cache/sessions/SessionCache";
-import { APIConvocation, APIListeConvocations } from "../../../../contracts/convocations";
+import { APIConvocation, APIConvocationsSupplementairesMap } from "../../../../contracts/convocations";
 import { ErreurRequeteInvalide } from "../../../erreursApi";
 
-export async function getConvocationsSupplementaires(sessionId: string, epreuveCode: string): Promise<APIListeConvocations> {
+export async function getConvocationsSupplementaires(sessionId: string, epreuveCode: string): Promise<APIConvocationsSupplementairesMap> {
 
     const idSession = parseInt(sessionId ?? '');
 
@@ -24,20 +24,21 @@ export async function getConvocationsSupplementaires(sessionId: string, epreuveC
         throw new ErreurRequeteInvalide("L'épreuve demandé n'existe pas.");
     }
 
-    const convocationsBrutes = await epreuve.convocations.getAll();
+    await epreuve.convocations.getAll();
 
-    const listeConvocations: APIConvocation[] = [];
-    for (const convocation of convocationsBrutes) {
+    const convocsParSalle: Record<string, APIConvocation[]> = {};
+    for (const convocation of epreuve.convocations.convocationsSupplementaires.values()) {
 
-        if (convocation.codeAnonymat.startsWith('Z')) {
+        const convocationFormatee = convocation.toJSON();
 
-            const convocationFormatee = convocation.toJSON();
-            listeConvocations.push(convocationFormatee);
+        if (!convocsParSalle[convocation.codeSalle]) {
+            convocsParSalle[convocation.codeSalle] = [];
         }
+
+        convocsParSalle[convocation.codeSalle]?.push(convocationFormatee);
 
     }
 
-    return { convocations: listeConvocations };
-
+    return convocsParSalle;
 
 }
