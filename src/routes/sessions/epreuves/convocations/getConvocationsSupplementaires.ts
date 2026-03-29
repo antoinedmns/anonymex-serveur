@@ -24,20 +24,16 @@ export async function getConvocationsSupplementaires(sessionId: string, epreuveC
         throw new ErreurRequeteInvalide("L'épreuve demandé n'existe pas.");
     }
 
-    const convocationsBrutes = await epreuve.convocations.getAll();
+    await epreuve.convocations.getAll();
 
     const listeConvocations: APIConvocation[] = [];
-    for (const convocation of convocationsBrutes) {
+    for (const convocation of epreuve.convocations.convocationsSupplementaires.values()) {
 
-        if (convocation.codeAnonymat.startsWith('Z')) {
-
-            const convocationFormatee = convocation.toJSON();
-            listeConvocations.push(convocationFormatee);
-        }
+        const convocationFormatee = convocation.toJSON();
+        listeConvocations.push(convocationFormatee);
 
     }
 
     return { convocations: listeConvocations };
-
 
 }

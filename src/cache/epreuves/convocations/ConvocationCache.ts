@@ -16,6 +16,9 @@ export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/,
     /** Liste de toutes les salles concernées */
     salles = new Set<string>();
 
+    /** Nombre de copies déposées et reconnues */
+    nbDepots = 0;
+
     /**
      * Instancier un cache pour les convocations d'une épreuve donnée.
      * @param idSession
@@ -43,6 +46,10 @@ export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/,
             const nbConvocsSalle = this.effectifsSalle.get(convoc.codeSalle) ?? 0;
             this.effectifsSalle.set(convoc.codeSalle, nbConvocsSalle + 1);
             this.salles.add(convoc.codeSalle);
+
+            if (convoc.noteQuart !== null) {
+                this.nbDepots += 1;
+            }
         }
     }
 
