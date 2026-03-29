@@ -15,7 +15,7 @@ export class ModeleBordereau extends ModeleLectureBase {
         const cadreLargeur = mmToPoints(14);
         const cadreHauteur = mmToPoints(16);
 
-        const y = 275;
+        const y = 280;
         const tailleTotale = 6 * cadreLargeur + 5 * gap + 15;
         const startX = (tailleDoc - tailleTotale) / 2;
 
@@ -71,7 +71,7 @@ export class ModeleBordereau extends ModeleLectureBase {
         // Case Erreur
         const caseErreur: LayoutPosition = {
             x: 335,
-            y: 557,
+            y: 573,
             largeur: caseLargeur,
             hauteur: caseHauteur,
         };

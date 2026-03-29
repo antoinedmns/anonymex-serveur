@@ -36,7 +36,7 @@ export async function genererPageBordereau(doc: typeof PDFDocument): Promise<voi
     genererCiblesConcentriques(doc, 9, 17);
 
     // Code Anonymat
-    const codeAnonymatY = 215;
+    const codeAnonymatY = 212;
 
     doc.font("Helvetica-Bold")
         .fontSize(23)
@@ -102,27 +102,29 @@ export async function genererPageBordereau(doc: typeof PDFDocument): Promise<voi
 
     // Texte instructions correcteur
     doc.font("Helvetica-Bold").fontSize(9).fillColor("#444")
-        .text("Reporter la note", 335, cadreCorrecteurY + 27, { continued: true })
+        .text("Reporter la note", 335, cadreCorrecteurY + 25, { continued: true })
         .font("Helvetica")
-        .text(" en noircissant\nentièrement les cases correspondante.\n\n\nEn cas d'erreur de report, noircir la\ncase ci-dessous :");
+        .text(" en noircissant\nentièrement les cases correspondantes.\n\n"
+            + "Pour une note avec décimale,cochez la\nnote et la fraction associée.\n\n"
+            + "En cas d'erreur de report, noircir la\ncase ci-dessous :");
 
     // Cadre saisie note
-    doc.moveTo(315, cadreCorrecteurY + 140).lineTo(doc.page.width - 85, cadreCorrecteurY + 140).stroke();
+    doc.moveTo(315, cadreCorrecteurY + 148).lineTo(doc.page.width - 85, cadreCorrecteurY + 148).stroke();
 
     doc.font("Helvetica-Bold").fontSize(10).fillColor("#444")
-        .text("Note", 335, cadreCorrecteurY + 160, { continued: true })
+        .text("Note", 335, cadreCorrecteurY + 168, { continued: true })
         .font("Helvetica-Oblique").fontSize(9).fillColor("#666").text(" (en chiffres)");
 
     const barreDeSaisie = (x: number, y: number, width: number) => {
         doc.moveTo(x, y).lineTo(x, y + 3).lineTo(x + width, y + 3).lineTo(x + width, y).stroke();
     };
 
-    barreDeSaisie(335, cadreCorrecteurY + 210, 21);
-    barreDeSaisie(335 + 25, cadreCorrecteurY + 210, 21);
+    barreDeSaisie(335, cadreCorrecteurY + 215, 21);
+    barreDeSaisie(335 + 25, cadreCorrecteurY + 215, 21);
 
     // Virgule
-    doc.font("Helvetica-Bold").fontSize(15).fillColor("#444").text(",", 335 + 53, cadreCorrecteurY + 200);
+    doc.font("Helvetica-Bold").fontSize(15).fillColor("#444").text(",", 335 + 53, cadreCorrecteurY + 205);
 
-    barreDeSaisie(335 + 65, cadreCorrecteurY + 210, 21);
-    barreDeSaisie(335 + 65 + 25, cadreCorrecteurY + 210, 21);
+    barreDeSaisie(335 + 65, cadreCorrecteurY + 215, 21);
+    barreDeSaisie(335 + 65 + 25, cadreCorrecteurY + 215, 21);
 }
