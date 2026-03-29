@@ -28,7 +28,7 @@ export class Epreuve extends ElementEnCache {
     public duree: number;
     public copies = 0;//todo
     public nbPresents: number | null;
-    public nbIncidents = 0;//todo
+    public nbIncidents: number;
 
     /** Cache des incidents de l'épreuve */
     public incidents: IncidentCache;
@@ -48,6 +48,7 @@ export class Epreuve extends ElementEnCache {
         this.nbPresents = data.nb_presents;
         this.convocations = new ConvocationCache(this.idSession, this.codeEpreuve);
         this.incidents = new IncidentCache(this.idSession, this.codeEpreuve);
+        this.nbIncidents = this.incidents.size();
     }
 
     /** Obtenir la session de cette epreuve */
