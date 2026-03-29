@@ -7,13 +7,13 @@ import { getSuggestions } from "./getSuggestions";
 
 const incidentsRouter = Router({ mergeParams: true });
 
+// GET /sessions/:session/epreuves/:code/incidents/suggestions?code=:codePartiel
+incidentsRouter.get<{ session: string, code: string }>("/suggestions", (req, res) =>
+    useRest(() => getSuggestions(req.params.session, req.params.code, req.query?.code), req, res));
+
 // GET /sessions/:session/epreuves/:code/incidents/:id
 incidentsRouter.get<{ session: string, code: string, id: string }>("/:id", (req, res) =>
     useRest(() => getIncident(req.params.session, req.params.code, req.params.id), req, res));
-
-// GET /sessions/:session/epreuves/:code/incidents/suggestions/:codePartiel
-incidentsRouter.get<{ session: string, code: string, codePartiel: string }>("/suggestions/:codePartiel", (req, res) =>
-    useRest(() => getSuggestions(req.params.session, req.params.code, req.params.codePartiel), req, res));
 
 // GET /sessions/:session/epreuves/:code/incidents/
 incidentsRouter.get<{ session: string, code: string }>("/", (req, res) =>

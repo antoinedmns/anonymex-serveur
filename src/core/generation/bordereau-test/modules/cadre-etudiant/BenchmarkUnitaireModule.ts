@@ -31,7 +31,7 @@ export class BenchmarkUnitaireModule extends ModeleLectureBase {
         return { lettresCodeAnonymat: cadres };
     }
 
-    override generer(pdf: PDFKit.PDFDocument): boolean {
+    generer(pdf: PDFKit.PDFDocument): boolean {
 
         const xSeparation = pdf.page.width / 2;
         const tailleColonne = pdf.page.width / 2 - 40;

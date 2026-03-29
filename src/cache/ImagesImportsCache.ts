@@ -31,8 +31,10 @@ export class ImagesImportsCache {
      * Renvoit les logos de l'université et de la faculté.
      */
     public static async getLogos(force = false) {
-        const universite = await this.getImageImporte("logo_universite", a => this.reduireTransfn(a, 700, 300), force);
-        const faculte = await this.getImageImporte("logo_faculte", a => this.reduireTransfn(a, 700, 300), force);
+        const universite = await this.getImageImporte("logo_universite",
+            a => this.noirEtBlancTransfn(this.reduireTransfn(a, 400, 200)), force);
+        const faculte = await this.getImageImporte("logo_faculte",
+            a => this.noirEtBlancTransfn(this.reduireTransfn(a, 400, 200)), force);
 
         return { universite, faculte };
     }

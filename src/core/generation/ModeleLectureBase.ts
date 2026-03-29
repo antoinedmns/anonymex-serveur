@@ -1,5 +1,3 @@
-import type PDFDocument from 'pdfkit';
-
 /** Element du layout (zone de lecture) */
 export interface LayoutPosition {
     x: number;
@@ -17,12 +15,7 @@ export abstract class ModeleLectureBase {
     abstract getFormat(): 'A4' | 'A5';
 
     /**
-     * Générer (rendu vectoriel) le modèle de lecture.
-     */
-    abstract generer(pdf: typeof PDFDocument): boolean;
-
-    /**
-     * Positions des éléments de lecture dans le layout.
+     * Positions des éléments de lecture dans le layout. En points PDF.
      * @return Dictionnaire des positions, par identifiant/nom
      */
     abstract getZonesLecture(): Record<string, LayoutPosition | LayoutPosition[]>;

@@ -83,16 +83,14 @@ export class MediaService {
 
             // TODO!
 
-        } else if (filename.endsWith('.webp')) {
+        } else {
 
-            // Lecture d'un fichier WebP : retourner un tableau avec un seul buffer
+            // Lecture d'un fichier image : retourner un tableau avec un seul buffer
             let image = sharp(filePath);
             if (transfn) image = transfn(image);
             const buffer = await image.toBuffer();
             return [buffer];
 
-        } else {
-            throw new Error("Tentative de lecture d'un fichier qui n'est pas un média : " + filename);
         }
 
         return [];
