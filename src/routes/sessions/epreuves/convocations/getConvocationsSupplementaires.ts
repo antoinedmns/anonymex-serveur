@@ -1,14 +1,10 @@
-import { APIUpdateConvocation, UpdateConvocationSchema } from "../../../../contracts/convocations";
 import { sessionCache } from "../../../../cache/sessions/SessionCache";
-import { ErreurRequeteInvalide, ErreurServeur } from "../../../erreursApi";
+import { APIConvocation, APIListeConvocations } from "../../../../contracts/convocations";
+import { ErreurRequeteInvalide } from "../../../erreursApi";
 
-export async function patchConvocation(sessionId: string, epreuveCode: string, codeAnonymat: string, data: Record<string, unknown>): Promise<APIUpdateConvocation> {
+export async function getConvocationsSupplementaires(sessionId: string, epreuveCode: string): Promise<APIListeConvocations> {
 
     const idSession = parseInt(sessionId ?? '');
-
-    if(codeAnonymat.startsWith('Z')) {
-        throw new ErreurServeur("Vous ne pouvez pas modifier ce code anonymat.");
-    }
 
     if (isNaN(idSession) || sessionId === undefined) {
         throw new ErreurRequeteInvalide("L'ID de la session est invalide.");
@@ -28,8 +24,20 @@ export async function patchConvocation(sessionId: string, epreuveCode: string, c
         throw new ErreurRequeteInvalide("L'épreuve demandé n'existe pas.");
     }
 
-    const dataParsees = UpdateConvocationSchema.parse(data);
-    await epreuve.convocations.update(codeAnonymat, dataParsees);
+    const convocationsBrutes = await epreuve.convocations.getAll();
 
-    return dataParsees;
+    const listeConvocations: APIConvocation[] = [];
+    for (const convocation of convocationsBrutes) {
+
+        if (convocation.codeAnonymat.startsWith('Z')) {
+
+            const convocationFormatee = convocation.toJSON();
+            listeConvocations.push(convocationFormatee);
+        }
+
+    }
+
+    return { convocations: listeConvocations };
+
+
 }

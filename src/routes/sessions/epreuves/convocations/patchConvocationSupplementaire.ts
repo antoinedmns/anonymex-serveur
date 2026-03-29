@@ -1,0 +1,50 @@
+import { sessionCache } from "../../../../cache/sessions/SessionCache";
+import { APIBoolResponse } from "../../../../contracts/common";
+import { Database } from "../../../../core/services/database/Database";
+import { ErreurRequeteInvalide, ErreurServeur } from "../../../erreursApi";
+
+export async function patchConvocationSupplementaire(sessionId: string, epreuveCode: string, codeAnonymat: string, numeroEtu: unknown | undefined): Promise<APIBoolResponse> {
+
+    const idSession = parseInt(sessionId ?? '');
+    const numeroEtudiant = parseInt(numeroEtu?.toString() ?? '');
+
+    if (!codeAnonymat.startsWith('Z')) {
+        throw new ErreurServeur("Vous ne pouvez pas modifier ce code anonymat.");
+    }
+
+    if (isNaN(idSession) || sessionId === undefined) {
+        throw new ErreurRequeteInvalide("L'ID de la session est invalide.");
+    }
+
+    if (!epreuveCode) {
+        throw new ErreurRequeteInvalide("Le code de l'epreuve est invalide.");
+    }
+
+    if (isNaN(numeroEtudiant)) {
+        throw new ErreurRequeteInvalide("Le numéro étudiant est invalide.");
+    }
+
+    const session = await sessionCache.getOrFetch(idSession);
+    if (!session) {
+        throw new ErreurRequeteInvalide("La session demandé n'existe pas.");
+    }
+
+    const epreuve = await session.epreuves.getOrFetch(epreuveCode);
+    if (!epreuve) {
+        throw new ErreurRequeteInvalide("L'épreuve demandé n'existe pas.");
+    }
+
+    const resultats = await Database.query<{ code: string }>("SELECT c.code_anonymat as code FROM convocation c WHERE c.numero_etudiant = ? AND c.id_session = ? AND c.code_epreuve = ?;", [numeroEtudiant, idSession, epreuveCode]);
+    
+    const ancienneConvocation = await epreuve.convocations.getOrFetch(resultats[0]?.code ?? '');
+
+    if(ancienneConvocation?.noteQuart != null) {
+        throw new ErreurServeur("L'étudiant possède déjà une note.");
+    } else {
+        await epreuve.convocations.delete(resultats[0]?.code ?? '');
+    }
+
+    const nouvelleAssignation = await epreuve.convocations.update(codeAnonymat, { numero_etudiant: numeroEtudiant});
+
+    return { success: nouvelleAssignation.affectedRows > 0}
+}
