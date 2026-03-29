@@ -38,7 +38,7 @@ export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/,
             this.convocationsSupplementaires.set(convoc.codeAnonymat, convoc);
 
             // Si aucun étudiant associé, alors ce n'est PAS une convo normale, on suppr du cache
-            if (convoc.numeroEtudiant === null) this.delete(convoc.codeAnonymat);
+            if (convoc.numeroEtudiant === null) this.deleteDuCache(convoc.codeAnonymat);
         }
 
         if (convoc.numeroEtudiant !== null) {

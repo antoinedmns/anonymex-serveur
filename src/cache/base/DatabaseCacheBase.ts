@@ -143,9 +143,16 @@ export abstract class DatabaseCacheBase<I extends string | number, T extends Ele
         const valeursPK = this.valeursComposantesParent ? [...this.valeursComposantesParent, id] : [id];
 
         const result = await Database.execute(sql, valeursPK);
-        this.delete(id);
+        super.delete(id);
 
         return result;
+    }
+
+    /**
+     * Supprimer uniquement un élément du cache mémoire, sans suppression en BDD.
+     */
+    protected deleteDuCache(id: I): void {
+        super.delete(id);
     }
 
     /**

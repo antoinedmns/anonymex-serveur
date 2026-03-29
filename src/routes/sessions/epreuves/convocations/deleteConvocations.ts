@@ -7,11 +7,11 @@ export async function deleteConvocations(sessionId: string, epreuveCode: string,
 
     const idSession = parseInt(sessionId ?? '');
 
-    if(listeCodeAno === undefined) {
+    if (listeCodeAno === undefined) {
         throw new ErreurRequeteInvalide("L'array de codes anonymats est invalide.");
     }
 
-    if(!Array.isArray(listeCodeAno)) {
+    if (!Array.isArray(listeCodeAno)) {
         throw new ErreurRequeteInvalide("Le paramètre doit être un array de codes anonymats")
     }
 
@@ -35,11 +35,10 @@ export async function deleteConvocations(sessionId: string, epreuveCode: string,
 
     let resultatSuppression = 0;
 
-    for(const codeAno of listeCodeAno) {
+    for (const codeAno of listeCodeAno) {
         const suppression = await epreuve.convocations.delete(codeAno);
-
         resultatSuppression += suppression.affectedRows;
     }
 
-    return { success : resultatSuppression > 0 }
+    return { success: resultatSuppression > 0 }
 }

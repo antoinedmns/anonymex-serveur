@@ -6,7 +6,7 @@ export async function patchConvocation(sessionId: string, epreuveCode: string, c
 
     const idSession = parseInt(sessionId ?? '');
 
-    if(codeAnonymat.startsWith('Z')) {
+    if (codeAnonymat.startsWith('Z')) {
         throw new ErreurServeur("Vous ne pouvez pas modifier ce code anonymat.");
     }
 
