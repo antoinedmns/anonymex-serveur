@@ -4,7 +4,7 @@ import { z } from "zod";
 export const ConvocationSchema = z.object({
     idSession: z.number().int().positive(),
     codeEpreuve: z.string(),
-    numeroEtudiant: z.int().positive().optional(),
+    numeroEtudiant: z.number().int().positive().optional(),
     rang: z.number().int().positive().optional(),
     codeAnonymat: z.string(),
     noteQuart: z.number().int().positive().optional(),
@@ -15,7 +15,7 @@ export const ListConvocationsSchema = z.object({
     convocations: z.array(ConvocationSchema)
 });
 
-export const UpdateConvocationSchema = ConvocationSchema.pick({ rang: true, noteQuart: true, codeSalle: true });
+export const UpdateConvocationSchema = ConvocationSchema.pick({ rang: true, noteQuart: true, codeSalle: true }).partial();
 
 // --- Types ---
 export type APIConvocation = z.infer<typeof ConvocationSchema>;
