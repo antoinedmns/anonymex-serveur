@@ -31,9 +31,13 @@ export async function getEpreuves(sessionId: string): Promise<APIListEpreuves> {
     for (const epreuve of epreuvesBrutes) {
         i++;
         const luck = Math.random();
-        epreuve.dateEpreuve = now + (i % 2 === 0 ? -1 : 1) * Math.floor(((Math.random() * 10) + 1) * 24 * 3600 * 1000); // entre 1 et 10 jours dans le passé ou le futur
+        const dateEpreuve = new Date(now + (i % 2 === 0 ? 1 : -1) * Math.floor(((Math.random() * 10) + 1) * 24 * 3600 * 1000)); // entre 1 et 10 jours dans le passé ou le futur
+        const minuteSlot = Math.floor(Math.random() * 17) * 30; // de 08:00 a 16:00, par tranche de 30 min
+        dateEpreuve.setHours(8 + Math.floor(minuteSlot / 60), minuteSlot % 60, 0, 0);
+        epreuve.dateEpreuve = dateEpreuve.getTime();
         if (i % 2 === 0) epreuve.statut = luck > 0.5 ? EpreuveStatut.MATERIEL_NON_IMPRIME : EpreuveStatut.MATERIEL_IMPRIME;
         else epreuve.statut = luck > 0.5 ? EpreuveStatut.EN_ATTENTE_DE_DEPOT : luck > 0.15 ? EpreuveStatut.DEPOT_COMPLET : EpreuveStatut.NOTE_EXPORTEES;
+        if (epreuve.codeEpreuve === "HAV637VE") epreuve.statut = EpreuveStatut.EN_ATTENTE_DE_DEPOT;
         epreuve.duree = luck > 0.5 ? 120 : 180; // 2 ou 3h
 
         const epreuveFormatee = epreuve.toJSON();

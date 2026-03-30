@@ -108,7 +108,7 @@ export async function getRecherche(sessionId: string, query: string): Promise<AP
             };
         }
     }
-    
+
     // Recherche par action (priorité 5)
     const queryAction = queryBrute.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // On nettoie la recherche pour supprimer les accents
 

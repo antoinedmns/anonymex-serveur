@@ -28,7 +28,9 @@ export const ListEpreuvesSchema = z.object({
     epreuvesPassees: z.array(EpreuveSchema)
 });
 
-export const UpdateEpreuveSchema = EpreuveSchema.pick({ nom: true, salles: true, date: true, duree: true }).partial();
+export const UpdateEpreuveSchema = EpreuveSchema.pick({ nom: true, salles: true, duree: true }).extend({
+    date_epreuve: z.number().int().positive() // timestamp depuis epoch en minutes
+}).partial();
 
 export const SallesEpreuveSchema = z.array(z.object({
     codeSalle: z.string(),
