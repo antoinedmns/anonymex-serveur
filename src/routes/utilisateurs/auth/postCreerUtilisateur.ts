@@ -70,6 +70,9 @@ export async function postCreerUtilisateur(req: Request, res: Response): Promise
 
             logInfo("Inscription", "Nouvel utilisateur #" + insertionUtilisateur.insertId + " créé avec l'email " + nouvelUtilisateur.email + ".");
 
+            // Mettre à jour le cache
+            utilisateurCache['aucunUtilisateurEnregistre'] = false;
+
             // Supprimer l'invitation utilisée
             if (autorisationStandard) {
                 await Database.query("DELETE FROM invitation WHERE email_invite = ? AND jeton = ?", [nouvelUtilisateur.email, nouvelUtilisateur.jetonInvitation]);
