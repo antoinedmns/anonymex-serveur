@@ -35,6 +35,7 @@ export async function postConvocationPresents(sessionId: string, epreuveCode: st
     }
 
     const update = await session.epreuves.update(epreuveCode, { nb_presents: nbPresents });
+    epreuve.nbPresents = nbPresents; // Mettre à jour le cache
 
     return { success: update.affectedRows > 0 };
 }
