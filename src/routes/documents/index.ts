@@ -30,10 +30,11 @@ documentsRouter.get("/magacha/:sessionId/:codeEpreuve/:nbIncidents", (req, res) 
     return useFullRest(() => getBordereauTemp(sessionId, codeEpreuve, nbIncidents, res), req, res);
 });
 
-// GET /documents/session/:sessionId/epreuve/:codeEpreuve/notes.xlsx
-documentsRouter.get("/session/:sessionId/epreuve/:codeEpreuve/notes.xlsx", (req, res) => {
+// GET /documents/session/:sessionId/epreuve/:codeEpreuve/notes?format=csv
+documentsRouter.get("/session/:sessionId/epreuve/:codeEpreuve/notes", (req, res) => {
     const { sessionId, codeEpreuve } = req.params;
-    return useFullRest(async () => await getNotesXLSX(sessionId, codeEpreuve, res), req, res);
+    const format = req.query.format as string;
+    return useFullRest(async () => await getNotesXLSX(sessionId, codeEpreuve, format, res), req, res);
 });
 
 export { documentsRouter as documentsRouter };
