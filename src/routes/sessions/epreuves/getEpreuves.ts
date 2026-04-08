@@ -1,6 +1,9 @@
 import { APIEpreuve, APIListEpreuves, EpreuveStatut } from "../../../contracts/epreuves";
 import { sessionCache } from "../../../cache/sessions/SessionCache";
 import { ErreurRequeteInvalide } from "../../erreursApi";
+import { Epreuve } from "../../../cache/epreuves/Epreuve";
+import { Database } from "../../../core/services/database/Database";
+import { logInfo, styles } from "../../../utils/logger";
 
 export async function getEpreuves(sessionId: string): Promise<APIListEpreuves> {
     const idSession = parseInt(sessionId ?? '');
@@ -25,32 +28,48 @@ export async function getEpreuves(sessionId: string): Promise<APIListEpreuves> {
     const epreuvesAvenir: APIEpreuve[] = [];
     const epreuvesPassees: APIEpreuve[] = [];
 
-    // TEMP = forcer 50% des épreuves a etres passées, 50% à venir
-    let i = 0;
+    // Liste des épreuves dont le statut à été mis à jour,
+    // Afin de refléter les changements dans la base de données
+    const epereuvesChangees: Epreuve[] = [];
 
     for (const epreuve of epreuvesBrutes) {
-        i++;
-        const luck = Math.random();
-        const dateEpreuve = new Date(now + (i % 2 === 0 ? 1 : -1) * Math.floor(((Math.random() * 10) + 1) * 24 * 3600 * 1000)); // entre 1 et 10 jours dans le passé ou le futur
-        const minuteSlot = Math.floor(Math.random() * 17) * 30; // de 08:00 a 16:00, par tranche de 30 min
-        dateEpreuve.setHours(8 + Math.floor(minuteSlot / 60), minuteSlot % 60, 0, 0);
-        epreuve.dateEpreuve = dateEpreuve.getTime();
-        if (i % 2 === 0) epreuve.statut = luck > 0.5 ? EpreuveStatut.MATERIEL_NON_IMPRIME : EpreuveStatut.MATERIEL_IMPRIME;
-        else epreuve.statut = luck > 0.5 ? EpreuveStatut.EN_ATTENTE_DE_DEPOT : luck > 0.15 ? EpreuveStatut.DEPOT_COMPLET : EpreuveStatut.NOTE_EXPORTEES;
-        if (epreuve.codeEpreuve === "HAV637VE") epreuve.statut = EpreuveStatut.EN_ATTENTE_DE_DEPOT;
-        epreuve.duree = luck > 0.5 ? 120 : 180; // 2 ou 3h
-
         const epreuveFormatee = epreuve.toJSON();
 
         if (epreuve.dateEpreuve >= now) {
             epreuvesAvenir.push(epreuveFormatee);
         } else {
+            // l'épreuve est passée, mettre à jour le statut si besoin
+            if (epreuve.statut === EpreuveStatut.MATERIEL_IMPRIME || epreuve.statut === EpreuveStatut.MATERIEL_NON_IMPRIME) {
+                await epreuve.changerStatut(EpreuveStatut.SAISIE_PRESENCE);
+                epreuveFormatee.statut = EpreuveStatut.SAISIE_PRESENCE;
+                epereuvesChangees.push(epreuve);
+            }
+
             epreuvesPassees.push(epreuveFormatee);
         }
     }
 
+    // Sauvegarder les changements de statut dans la base de données
+    if (epereuvesChangees.length > 0) {
+        const transaction = await Database.creerTransaction();
+        try {
+            // Update chaque épreuve
+            // TODO: requete en batch (optimisation)?
+            for (const epreuve of epereuvesChangees) {
+                await transaction.query('UPDATE epreuve SET statut = ? WHERE id_session = ? AND code_epreuve = ?', [epreuve.statut, epreuve.idSession, epreuve.codeEpreuve]);
+            }
+            await transaction.commit();
+        } catch (error) {
+            // Erreur lors de la mise à jour, rollback et throw
+            await transaction.rollback();
+            throw error;
+        }
+
+        logInfo('Epreuves', 'Status mis à jour pour ' + styles.fg.cyan + epereuvesChangees.length + styles.fg.white + ' épreuves passées.');
+    }
+
     return {
-        epreuvesAvenir: /*TEMP SORT: TODO: RETIRER!!!!!!*/epreuvesAvenir.sort((a, b) => a.date - b.date),
-        epreuvesPassees: /*idem*/epreuvesPassees.sort((a, b) => b.date - a.date)
+        epreuvesAvenir,
+        epreuvesPassees
     };
 }

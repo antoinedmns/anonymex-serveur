@@ -38,8 +38,11 @@ export const SallesEpreuveSchema = z.array(z.object({
     convocations: z.number().int().nonnegative()
 }));
 
+export const EpreuveStatutChangeSchema = z.object({ nvStatut: z.enum(EpreuveStatut).optional() });
+
 // --- Types ---
 export type APIEpreuve = z.infer<typeof EpreuveSchema>;
 export type APIUpdateEpreuve = z.infer<typeof UpdateEpreuveSchema>;
 export type APIListEpreuves = z.infer<typeof ListEpreuvesSchema>;
 export type APISallesEpreuve = z.infer<typeof SallesEpreuveSchema>;
+export type APIEpreuveStatutChange = z.infer<typeof EpreuveStatutChangeSchema>;

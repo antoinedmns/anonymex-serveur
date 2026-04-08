@@ -47,6 +47,11 @@ export class Epreuve extends ElementEnCacheBdd<EpreuveData> {
         this.incidents = new IncidentCache(this.idSession, this.codeEpreuve);
     }
 
+    /** Changer le statut de l'épreuve */
+    public async changerStatut(nvStatut: EpreuveStatut): Promise<void> {
+        this.statut = nvStatut;
+    }
+
     /** Obtenir la session de cette epreuve */
     public async getSession(): Promise<Session> {
         const session = await sessionCache.getOrFetch(this.idSession);
