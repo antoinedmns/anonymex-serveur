@@ -1,11 +1,9 @@
 import { Mat } from "@techstark/opencv-js";
-import { ModeleBordereau } from "../generation/bordereau/modeleBordereau";
-import { ErreurNoteNonLue, ErreurResultatLu } from "./lectureErreurs";
-import { OpenCvInstance } from "../services/OpenCvInstance";
-import { decouperROIs } from "./preparation/decouperROIs";
-
-const MARGE_CIBLES_MM = 17;
-const DIAMETRE_CIBLES_MM = 9;
+import { ModeleBordereau } from "../../generation/bordereau/modeleBordereau";
+import { ErreurNoteNonLue, ErreurResultatLu } from "../lectureErreurs";
+import { OpenCvInstance } from "../../services/OpenCvInstance";
+import { decouperROIs } from "../preparation/decouperROIs";
+import { DIAMETRE_CIBLES_MM, MARGE_CIBLES_MM } from "../lireBordereaux";
 
 // Seuil de remplissage à partir duquel on considère une case comme noircie (valeur entre 0 et 1)
 const SEUIL_CASE_ACTIVE = 0.14;
@@ -68,17 +66,13 @@ export async function lireGrilleNote(matDoc: Mat): Promise<number> {
             throw new ErreurResultatLu(`Nombre de canaux non supporté pour la lecture de note: ${channels}`);
         }
 
-        // Pipeline dédiée cases grisées: normalisation + seuillage local + nettoyage.
+        // Pipeline dédiée cases grisées: normalisation + seuillage local + nettoyage
         cv.normalize(gray, normalized, 0, 255, cv.NORM_MINMAX);
         cv.GaussianBlur(normalized, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-        cv.adaptiveThreshold(
-            blurred,
-            binaryInv,
-            255,
+        cv.adaptiveThreshold(blurred, binaryInv, 255,
             cv.ADAPTIVE_THRESH_GAUSSIAN_C,
             cv.THRESH_BINARY_INV,
-            31,
-            8
+            31, 8
         );
         cv.morphologyEx(binaryInv, binaryInv, cv.MORPH_OPEN, kernel);
         cv.morphologyEx(binaryInv, binaryInv, cv.MORPH_CLOSE, kernel);

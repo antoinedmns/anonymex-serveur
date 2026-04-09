@@ -10,7 +10,7 @@ import { Database } from "../services/database/Database";
 import { Transaction } from "../services/database/Transaction";
 import { salleCache } from "../../cache/salles/SalleCache";
 import { SalleData } from "../../cache/salles/Salle";
-import { appliquerDecalage, genererCodesHamming, classerCodes } from "../../utils/codeAnonymatUtils";
+import { appliquerDecalage, genererCodesHamming, classerCodes, getDecalages } from "../../utils/codeAnonymatUtils";
 import { config } from "../../config";
 import { ConvocationData } from "../../cache/epreuves/convocations/Convocation";
 
@@ -211,13 +211,7 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
             const decalageEpreuve = decalagesEpreuves.get(codeEpreuve);
 
             if (decalageEpreuve === undefined) throw new Error(`Aucun décalage trouvé pour l'épreuve ${codeEpreuve}`);
-
-            const Q = alphabet.length;
-            const decalage = [
-                1 + (decalageEpreuve % (Q - 1)), // décalage 1er caractère
-                1 + (Math.floor(decalageEpreuve / (Q - 1)) % (Q - 1)), // décalage 2e caractère
-                1 + (Math.floor(decalageEpreuve / Math.pow(Q - 1, 2)) % (Q - 1)), // décalage 3e caractère
-            ]
+            const decalages = getDecalages(decalageEpreuve, alphabet);
 
             // Calculer la distance de Hamming optimale à appliquer
             let distanceHamming = 1;
@@ -238,7 +232,7 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
                 const codeAnonymat = codesDisponibles.codes[indexCode++ % codesDisponibles.codes.length];
                 if (codeAnonymat) newConvocations.push({
                     ...convocation,
-                    code_anonymat: codeAnonymat + appliquerDecalage(codeAnonymat, decalage, alphabet)
+                    code_anonymat: codeAnonymat + appliquerDecalage(codeAnonymat, decalages, alphabet)
                 });
             }
 
@@ -257,7 +251,7 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
                         note_quart: null,
                         code_salle: codeSalle,
                         rang: null,
-                        code_anonymat: codeAnonymat + appliquerDecalage(codeAnonymat, decalage, alphabet)
+                        code_anonymat: codeAnonymat + appliquerDecalage(codeAnonymat, decalages, alphabet)
                     });
                 }
 

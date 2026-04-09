@@ -47,7 +47,7 @@ export class ErreurResultatLu extends ErreurLecture {
 export class ErreurCodeAnonymat extends ErreurResultatLu { }
 
 // Erreurs lecture de la grille de notes
-export class ErreurLectureGrilleNote extends ErreurLecture { name = "Erreur de lecture de la note"; incident = true; }
+export class ErreurLectureGrilleNote extends ErreurResultatLu { name = "Erreur de lecture de la note"; }
 export class ErreurNoteNonLue extends ErreurLectureGrilleNote { name = "Aucune note lue"; }
 export class ErreurNoteAmbigue extends ErreurLectureGrilleNote { name = "Lecture de note ambiguë"; }
 export class ErreurNoteInvalide extends ErreurLectureGrilleNote { name = "Note lue invalide"; }

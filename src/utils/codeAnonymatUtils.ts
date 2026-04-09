@@ -81,6 +81,34 @@ export function appliquerDecalage(codeAnonymat: string, decalages: number[], alp
 }
 
 /**
+ * A partir d'une lettre décalée et du décalage appliqué, retrouver la lettre d'origine.
+ * @param lettreDecalee lettre du code de redondance
+ * @param decalage valeur de décalage (base alphabetique)
+ * @param alphabet
+ */
+export function inverserDecalage(lettreDecalee: string, decalage: number, alphabet: string): string {
+    const Q = alphabet.length;
+    const indexLettre = alphabet.indexOf(lettreDecalee);
+    if (indexLettre === -1) throw new Error(`Caractère '${lettreDecalee}' non trouvé dans l'alphabet.`);
+    const indexOriginal = (indexLettre - decalage + Q) % Q;
+    return alphabet[indexOriginal]!;
+}
+
+/**
+ * A partir d'un ID de décalage, renvoit les valeurs individuelles de décalage
+ * @param idDecalage ID du décalage
+ * @param alphabet alphabet utilisé
+ */
+export function getDecalages(idDecalage: number, alphabet: string): number[] {
+    const Q = alphabet.length;
+    return [
+        1 + (idDecalage % (Q - 1)), // décalage 1er caractère
+        1 + (Math.floor(idDecalage / (Q - 1)) % (Q - 1)), // décalage 2e caractère
+        1 + (Math.floor(idDecalage / Math.pow(Q - 1, 2)) % (Q - 1)), // décalage 3e caractère
+    ];
+}
+
+/**
  * Mélange et classe les codes (ceux qui commencent par Z sont séparés)
  */
 export function classerCodes(codes: string[]): { codes: string[], reserve: string[] } {

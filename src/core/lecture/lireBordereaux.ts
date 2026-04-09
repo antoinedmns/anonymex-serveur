@@ -1,14 +1,8 @@
 import { Fichier } from "../../routes/useFile";
 import { Mat } from "@techstark/opencv-js";
-import { matToSharp } from "../../utils/imgUtils";
-import { OpenCvInstance } from "../services/OpenCvInstance";
-import { TensorFlowCNN } from "./CNN/TensorFlowCNN";
 import { Depot } from "./DepotsManager";
 import { ErreurResultatLu } from "./lectureErreurs";
-import { preprocessPipelines } from "./OCR/preprocessPipelines";
 import { TesseractOCR } from "./OCR/TesseractOCR";
-import { decouperROIs } from "./preparation/decouperROIs";
-//import { detecterAprilTags } from "./preparation/detecterAprilTags";
 import { extraireScans } from "./preparation/extraireScans";
 import { preparerScan } from "./preparation/preparerScan";
 import { sessionCache } from "../../cache/sessions/SessionCache";
@@ -16,140 +10,21 @@ import { IncidentData } from "../../cache/epreuves/incidents/Incident";
 import { config } from "../../config";
 import { MediaService } from "../services/MediaService";
 import { logInfo } from "../../utils/logger";
-import { ModeleBordereau } from "../generation/bordereau/modeleBordereau";
-import * as tf from "@tensorflow/tfjs-node";
-import { CvType } from "../services/OpenCvInstance";
-import { lireGrilleNote } from "./lireGrilleNote";
+import { lireGrilleNote } from "./bordereau/lireGrilleNote";
+import { lireCodeAnonymat } from "./bordereau/lireCodeAnonymat";
+import { getDecalages, inverserDecalage } from "../../utils/codeAnonymatUtils";
 
-const MARGE_CIBLES_MM = 17;
-const DIAMETRE_CIBLES_MM = 9;
+export const MARGE_CIBLES_MM = 17;
+export const DIAMETRE_CIBLES_MM = 9;
 
 export type CallbackLecture = (event: string, id: number, data: Record<string, unknown>) => void;
 
-function preprocessRoiEmnistOpenCv(cv: CvType, roiMat: Mat): tf.Tensor3D | null {
-    if (roiMat.rows <= 0 || roiMat.cols <= 0) {
-        return null;
-    }
-
-    const gray = new cv.Mat();
-    const denoised = new cv.Mat();
-    const binaryInv = new cv.Mat();
-    const binaryLetterBlack = new cv.Mat();
-    const kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3));
-
-    try {
-        const channels = roiMat.channels();
-        if (channels === 1) {
-            roiMat.copyTo(gray);
-        } else if (channels === 3) {
-            cv.cvtColor(roiMat, gray, cv.COLOR_BGR2GRAY);
-        } else if (channels === 4) {
-            cv.cvtColor(roiMat, gray, cv.COLOR_RGBA2GRAY);
-        } else {
-            throw new Error(`Canaux ROI non supportés pour EMNIST: ${channels}`);
-        }
-
-        cv.medianBlur(gray, denoised, 3);
-        cv.threshold(denoised, binaryInv, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
-        cv.morphologyEx(binaryInv, binaryInv, cv.MORPH_OPEN, kernel);
-        cv.morphologyEx(binaryInv, binaryInv, cv.MORPH_CLOSE, kernel);
-        cv.bitwise_not(binaryInv, binaryLetterBlack);
-
-        const rowMass = new Array<number>(binaryInv.rows).fill(0);
-        const colMass = new Array<number>(binaryInv.cols).fill(0);
-        let totalMass = 0;
-
-        for (let y = 0; y < binaryInv.rows; y++) {
-            const row = binaryInv.row(y);
-            const count = cv.countNonZero(row);
-            rowMass[y] = count;
-            totalMass += count;
-            row.delete();
-        }
-
-        for (let x = 0; x < binaryInv.cols; x++) {
-            const col = binaryInv.col(x);
-            const count = cv.countNonZero(col);
-            colMass[x] = count;
-            col.delete();
-        }
-
-        const minInkMass = Math.max(8, Math.round((binaryInv.rows * binaryInv.cols) * 0.002));
-        if (totalMass < minInkMass) {
-            return null;
-        }
-
-        const maxRowMass = Math.max(...rowMass, 0);
-        const maxColMass = Math.max(...colMass, 0);
-        const rowThreshold = Math.max(2, Math.round(maxRowMass * 0.08));
-        const colThreshold = Math.max(2, Math.round(maxColMass * 0.08));
-
-        let top = 0;
-        while (top < rowMass.length && (rowMass[top] ?? 0) < rowThreshold) top++;
-
-        let bottom = rowMass.length - 1;
-        while (bottom > top && (rowMass[bottom] ?? 0) < rowThreshold) bottom--;
-
-        let left = 0;
-        while (left < colMass.length && (colMass[left] ?? 0) < colThreshold) left++;
-
-        let right = colMass.length - 1;
-        while (right > left && (colMass[right] ?? 0) < colThreshold) right--;
-
-        const focused = new cv.Mat();
-        if (totalMass > 0 && right > left && bottom > top) {
-            const rect = new cv.Rect(left, top, right - left + 1, bottom - top + 1);
-            const roiFocused = binaryLetterBlack.roi(rect);
-            roiFocused.copyTo(focused);
-            roiFocused.delete();
-        } else {
-            binaryLetterBlack.copyTo(focused);
-        }
-
-        const outputSize = 28;
-        const padding = 2;
-        const innerSize = outputSize - (2 * padding);
-
-        const scale = Math.min(innerSize / focused.cols, innerSize / focused.rows);
-        const resizedW = Math.max(1, Math.round(focused.cols * scale));
-        const resizedH = Math.max(1, Math.round(focused.rows * scale));
-
-        const output = new cv.Mat(outputSize, outputSize, cv.CV_8UC1, new cv.Scalar(255));
-        const resizedGlyph = new cv.Mat();
-
-        try {
-            cv.resize(focused, resizedGlyph, new cv.Size(resizedW, resizedH), 0, 0, cv.INTER_AREA);
-
-            const x = Math.floor((outputSize - resizedW) / 2);
-            const y = Math.floor((outputSize - resizedH) / 2);
-            const dstRoi = output.roi(new cv.Rect(x, y, resizedW, resizedH));
-            resizedGlyph.copyTo(dstRoi);
-            dstRoi.delete();
-
-            cv.threshold(output, output, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
-            const data = Float32Array.from(output.data);
-            return tf.tensor3d(data, [outputSize, outputSize, 1]);
-        } finally {
-            output.delete();
-            resizedGlyph.delete();
-            focused.delete();
-        }
-    } finally {
-        gray.delete();
-        denoised.delete();
-        binaryInv.delete();
-        binaryLetterBlack.delete();
-        kernel.delete();
-    }
-}
+const ALPHABET = config.codesAnonymat.alphabetCodeAnonymat;
 
 export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot): Promise<void> {
 
     // Configurer tesseract
-    await TesseractOCR.configurerModeCaractereUnique(config.codesAnonymat.alphabetCodeAnonymat);
-
-    // Récupérer les positions des ROIs du modèle de bordereau
-    const roisCodeAno = ModeleBordereau.getPositionsCadresAnonymat();
+    await TesseractOCR.configurerModeCaractereUnique(ALPHABET);
 
     // Récupérer la session et l'épreuve depuis le dépôt
     const sessionId = getDepot().sessionId;
@@ -163,6 +38,12 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
         return;
     }
 
+    // Recupérer les valeurs de décalage pour l'épreuve
+    const decalages = getDecalages(epreuve.idDecalage, ALPHABET);
+
+    // Mettre en cache toutes les convocs. de l'épreuve pour lookup rapide
+    await epreuve.convocations.getAll();
+
     let numFichier = 0;
     for (const fichier of fichiers) {
         const document = { data: fichier.buffer, encoding: 'buffer', mimeType: fichier.mimetype };
@@ -174,78 +55,74 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
                 // Préparer et ajuste le scan (découpage, rotation, ...).
                 scanPret = await preparerScan(scan, buffer);
 
-                // Code lu ('' = échec de lecture)
-                const codeLu: string[] = [];
-
-                // Découper les lettres du code d'anonymat, et les lire
-                await decouperROIs(scanPret, roisCodeAno, DIAMETRE_CIBLES_MM, MARGE_CIBLES_MM, "A4",
-                    async (roiAnonymat) => {
-
-                        // Pré-processing de la ROI
-                        const cv = await OpenCvInstance.getInstance();
-                        if (roiAnonymat.rows <= 0 || roiAnonymat.cols <= 0) {
-                            roiAnonymat.delete();
-                            codeLu.push('');
-                            return;
-                        }
-
-                        const roiEmnistTensor = preprocessRoiEmnistOpenCv(cv, roiAnonymat);
-                        if (!roiEmnistTensor) {
-                            roiAnonymat.delete();
-                            codeLu.push('');
-                            return;
-                        }
-
-                        const roiSharp = matToSharp(cv, roiAnonymat);
-                        roiAnonymat.delete();
-
-                        const roiAnonPrete = await preprocessPipelines.initial(roiSharp.clone())
-                            .resize({
-                                width: 128, height: 128, fit: "contain", background: { r: 255, g: 255, b: 255 },
-                                kernel: "lanczos3"
-                            }).png().toBuffer();
-
-                        // Interroger l'OCR
-                        const { text, confidence } = await TesseractOCR.interroger(roiAnonPrete);
-
-                        // Interroger la CNN
-                        let prediction;
-                        try {
-                            prediction = await TensorFlowCNN.predire(roiEmnistTensor, 'EMNIST-Standard', config.codesAnonymat.alphabetCodeAnonymat);
-                        } finally {
-                            roiEmnistTensor.dispose();
-                        }
-
-                        //logInfo('Lecture', `CNN: ${prediction.caractere} (confiance: ${(prediction.confiance * 100).toFixed(2)}%), OCR: "${text.trim()}" (conf: ${confidence.toFixed(2)}%)`);
-
-                        // Décider du caractère lu en fonction des résultats de l'OCR et de la CNN
-                        if (prediction.caractere === text.trim()[0])
-                            codeLu.push(prediction.caractere);
-                        else if (prediction.confiance > 0.8)
-                            codeLu.push(prediction.caractere);
-                        else if (confidence > 0.7)
-                            codeLu.push(text.trim()[0] ?? '');
-                        else
-                            codeLu.push('');
-
-                    });
+                // Liste des erreurs rencontrées
+                const erreurs: Error[] = [];
 
                 // Lire la note
-                const noteLue = await lireGrilleNote(scanPret);
-                console.log("Note lue :", noteLue);
+                const noteLue = await lireGrilleNote(scanPret)
+                    .catch(err => { erreurs.push(err); return null; });
 
-                for (let i = 0; i < codeLu.length; i++) {
-                    const lettre = codeLu[i] ?? '';
-                    if (i < 3) {
-                        const lettreReport = codeLu[i + 3] ?? '';
-                        if (lettre === '' && lettreReport === '') {
-                            const codeLuPartiel = codeLu.map(c => c === '' ? '?' : c).join('');
-                            throw new ErreurResultatLu('Échec de lecture du code anonymat', codeLuPartiel);
+                // Lire le code d'anonymat
+                const codeLu = await lireCodeAnonymat(scanPret)
+                    .catch(err => { erreurs.push(err); return null; });
+
+                // Interpréter les resultats de lecture
+                const codeAnonymat: (string | null)[] = [];
+                if (codeLu) {
+                    for (const caseCode of codeLu) {
+                        if (caseCode) {
+                            if (caseCode.cnn.caractere === caseCode.ocr.caractere) {
+                                // CNN et OCR sont d'accord
+                                codeAnonymat.push(caseCode.cnn.caractere);
+                            } else if (caseCode.cnn.confiance >= 0.8) {
+                                // Confiance CNN > 0.8
+                                codeAnonymat.push(caseCode.cnn.caractere);
+                            } else if (caseCode.ocr.confiance >= 0.8) {
+                                // Confiance OCR > 0.8
+                                codeAnonymat.push(caseCode.ocr.caractere);
+                            } else {
+                                codeAnonymat.push(null);
+                            }
                         }
                     }
                 }
 
-                logInfo('Lecture', `Code d'anonymat lu : ${codeLu.join('')}`);
+                // Compléter le code en utilisant la valeur de report
+                for (let i = 0; i < codeAnonymat.length; i++) {
+                    const indexReport = i > 2 ? i - 3 : i + 3; // les cases 1,2,3 reportent sur 4,5,6 et inversement
+                    const lettreReportee = codeAnonymat[indexReport];
+                    const decalage = decalages[i % decalages.length];
+                    if (codeAnonymat[i] === null && lettreReportee !== null && lettreReportee !== undefined && decalage !== undefined) {
+                        codeAnonymat[i] = inverserDecalage(lettreReportee, decalage, ALPHABET);
+                    }
+                }
+
+                // Remplacer les caractères non reconnus par '?' pour constituer le code d'anonymat final
+                const codeAnonymatFinal = codeAnonymat.map(c => c ?? '?').join('');
+
+                // Remonter les erreurs
+                if (erreurs.length > 0) {
+                    // Première erreur de type incident
+                    const erreurPrimaire = erreurs.find(e => e instanceof ErreurResultatLu);
+                    if (erreurPrimaire) {
+                        // Assigner les données de lecture partielle si disponibles
+                        if (erreurPrimaire.codeAnonymatLu === undefined) erreurPrimaire.codeAnonymatLu = codeAnonymatFinal;
+                        if (erreurPrimaire.noteLue === undefined && noteLue) erreurPrimaire.noteLue = noteLue;
+
+                        const messages = erreurs.filter(e => e.message).map(e => e.message).join(' | ');
+                        erreurPrimaire.message = messages;
+
+                        throw erreurPrimaire;
+                    } else {
+                        throw erreurs[0];
+                    }
+                }
+
+                // Trouver la convocation correspondante
+                const convocation = epreuve.convocations.get(codeAnonymatFinal);
+                if (!convocation) {
+                    throw new ErreurResultatLu(`Code d'anonymat non reconnu.`, codeAnonymatFinal, noteLue ?? undefined);
+                }
 
             } catch (error) {
                 // Erreur lors de la lecture du bordereau : faire remonter l'erreur
