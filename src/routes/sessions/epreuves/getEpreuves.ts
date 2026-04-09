@@ -68,8 +68,10 @@ export async function getEpreuves(sessionId: string): Promise<APIListEpreuves> {
         logInfo('Epreuves', 'Status mis à jour pour ' + styles.fg.cyan + epereuvesChangees.length + styles.fg.white + ' épreuves passées.');
     }
 
+    epreuvesAvenir.sort()
+
     return {
-        epreuvesAvenir,
-        epreuvesPassees
+        epreuvesAvenir: epreuvesAvenir.sort((a, b) => a.date - b.date),
+        epreuvesPassees: epreuvesPassees.sort((a, b) => b.date - a.date)
     };
 }

@@ -17,10 +17,10 @@ import { ConvocationData } from "../../cache/epreuves/convocations/Convocation";
 const CHAMPS_INTERPRETATION = {
     // nom du champ interprété => nom de la colonne dans le XLSX
     date: "DAT_DEB_PES",
-    heure: "HORAIRE",
+    heure: "HEURE_DEBUT",
     salle: "COD_SAL",
     codeEpreuve: "COD_EPR",
-    nomEpreuve: "LIC_RES",
+    nomEpreuve: "LIB_EPR",
     prenomEtudiant: "LIB_PR1_IND",
     nomEtudiant: "LIB_NOM_PAT_IND",
     codeEtudiant: "COD_ETU",
@@ -31,6 +31,25 @@ const CHAMPS_INTERPRETATION = {
     duree: "DUREE_EXA",
     heureFin: "HEURE_FIN"
 };
+
+// Correspondance des mois en trois lettres
+const MOIS = {
+    "JAN": "01",
+    "FEB": "02",
+    "MAR": "03",
+    "APR": "04",
+    "MAY": "05",
+    "JUN": "06",
+    "JUL": "07",
+    "AUG": "08",
+    "SEP": "09",
+    "OCT": "10",
+    "NOV": "11",
+    "DEC": "12"
+} as Record<string, string>;
+
+const customParseFormat = require('dayjs/plugin/customParseFormat');
+dayjs.extend(customParseFormat);
 
 interface InterpretationFiltres {
     /** Liste des codes d'épreuves à interpréter. Les autres seront ignorées. */
@@ -124,19 +143,39 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
 
             }
 
-            const dateEnMinutes = Math.round(dayjs(`${dateEpreuve} ${horaire}`, 'YYYY-MM-DD HH:mm').valueOf() / 60000); // convertir en minutes
-            if (isNaN(dateEnMinutes)) {
-                throw new ErreurLigneInvalide(indice + 1, `date ou horaire invalide ('${dateEpreuve} ${horaire}')`);
+            // Parser l'horaire
+            const composantesHoraire = horaire.split('h');
+            const horaireHeures = parseInt(composantesHoraire[0] ?? '');
+            const horaireMinutes = parseInt(composantesHoraire[1] ?? '');
+            if (isNaN(horaireHeures) || isNaN(horaireMinutes)) {
+                throw new ErreurLigneInvalide(indice + 1, `horaire invalide ('${duree}'; format attendu : "H:mm" ou "HH:mm")`);
+            }
+            const horaireEnMinutes = horaireHeures * 60 + horaireMinutes;
+
+            // PARSER LA DATE
+            // Faire la correspondance entre le mois en lettres et sa valeur numérique
+            const composantesDateEpreuve = dateEpreuve.split('-');
+            const moisInput = composantesDateEpreuve[1];
+            if (composantesDateEpreuve.length < 3 || moisInput === undefined) {
+                throw new ErreurLigneInvalide(indice + 1, `format de date non reconnu (attendu: "DD-MMM-YY" ou "DD-MM-YY").`);
             }
 
-            const parts = duree.split('h');
-            const heures = parseInt(parts[0] ?? '');
-            const minutes = parseInt(parts[1] ?? '');
-            if (isNaN(heures) || isNaN(minutes)) {
+            const moisNumerique = MOIS[moisInput] ?? moisInput;
+            const dateParsee = composantesDateEpreuve[0] + '-' + moisNumerique + '-' + composantesDateEpreuve[2];
+
+            const dateEnMinutes = horaireEnMinutes + Math.round(dayjs(dateParsee, 'DD-MM-YY').valueOf() / 60000); // convertir en minutes
+            if (isNaN(dateEnMinutes)) {
+                throw new ErreurLigneInvalide(indice + 1, `date invalide ('${dateParsee}'; format attendu: "DD-MMM-YY" ou "DD-MM-YY").`);
+            }
+
+            // Calculer la durée
+            const composantesDuree = duree.split('h');
+            const dureeHeures = parseInt(composantesDuree[0] ?? '');
+            const dureeMinutes = parseInt(composantesDuree[1] ?? '');
+            if (isNaN(dureeHeures) || isNaN(dureeMinutes)) {
                 throw new ErreurLigneInvalide(indice + 1, `format de durée invalide ('${duree}'; format attendu : "H:mm" ou "HH:mm")`);
             }
-
-            const dureeEnMinutes = heures * 60 + minutes;
+            const dureeEnMinutes = dureeHeures * 60 + dureeMinutes;
 
             // Appliquer les filtres
             if (filtres) {
@@ -240,7 +279,12 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
 
                 // Créer les convocations sur la plage réservée
                 // 5% du nombre de convocations : Minimum 5 (ou nb. etudiants si < 5), maximum 20
-                const nbConvocsReservees = Math.max(Math.min(5, nbEtudiants), Math.min(20, Math.round(nbEtudiants * 0.05)));
+                const nbConvocsReservees = Math.min(20,
+                    Math.max(
+                        Math.min(5, nbEtudiants),
+                        Math.round(nbEtudiants * 0.05)
+                    )
+                );
 
                 for (let i = 0; i < nbConvocsReservees; i++) {
                     const codeAnonymat = codesDisponibles.reserve[indexCode++ % codesDisponibles.reserve.length];

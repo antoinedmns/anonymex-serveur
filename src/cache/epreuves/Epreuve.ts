@@ -30,7 +30,7 @@ export class Epreuve extends ElementEnCacheBdd<EpreuveData> {
     /** Cache des incidents de l'épreuve */
     public incidents: IncidentCache;
 
-    /** Cache des convocations associées à cette épreuve */
+    /** Cache des convocations associées à cette épreuve. */
     public convocations: ConvocationCache;
 
     constructor(data: EpreuveData) {
@@ -79,7 +79,7 @@ export class Epreuve extends ElementEnCacheBdd<EpreuveData> {
             nom: this.nom,
             statut: this.statut,
             salles: Array.from(this.convocations.salles),
-            date: this.dateEpreuve,
+            date: this.dateEpreuve * 1000,
             duree: this.duree,
             copies: this.convocations.nbDepots,
             incidents: this.incidents.size(),
