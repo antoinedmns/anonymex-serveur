@@ -70,30 +70,39 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
                 const codeAnonymat: (string | null)[] = [];
                 if (codeLu) {
                     for (const caseCode of codeLu) {
-                        if (caseCode) {
-                            if (caseCode.cnn.caractere === caseCode.ocr.caractere) {
-                                // CNN et OCR sont d'accord
-                                codeAnonymat.push(caseCode.cnn.caractere);
-                            } else if (caseCode.cnn.confiance >= 0.8) {
-                                // Confiance CNN > 0.8
-                                codeAnonymat.push(caseCode.cnn.caractere);
-                            } else if (caseCode.ocr.confiance >= 0.8) {
-                                // Confiance OCR > 0.8
-                                codeAnonymat.push(caseCode.ocr.caractere);
-                            } else {
-                                codeAnonymat.push(null);
-                            }
+                        if (!caseCode) {
+                            codeAnonymat.push(null);
+                            continue;
+                        }
+
+                        // Lire le char reconnu par le CNN et l'OCR
+                        const charCnn = caseCode.cnn.caractere.trim()[0] ?? null;
+                        let charOcr = caseCode.ocr.caractere.trim()[0] ?? null;
+                        if (charOcr === '') charOcr = null;
+
+                        if (charCnn === charOcr && caseCode.cnn.confiance >= 0.5) {
+                            // CNN et OCR sont d'accord
+                            codeAnonymat.push(charCnn);
+                        } else if (caseCode.cnn.confiance >= 0.8 && charCnn !== null) {
+                            // Confiance CNN > 0.8
+                            codeAnonymat.push(charCnn);
+                        } else if (caseCode.ocr.confiance >= 80 && charOcr !== null) {
+                            // Confiance OCR > 80
+                            codeAnonymat.push(charOcr);
+                        } else {
+                            codeAnonymat.push(null);
                         }
                     }
                 }
 
                 // Compléter le code en utilisant la valeur de report
                 for (let i = 0; i < codeAnonymat.length; i++) {
-                    const indexReport = i > 2 ? i - 3 : i + 3; // les cases 1,2,3 reportent sur 4,5,6 et inversement
+                    const radical = i <= 2;
+                    const indexReport = radical ? i + 3 : i - 3; // les cases 1,2,3 reportent sur 4,5,6 et inversement
                     const lettreReportee = codeAnonymat[indexReport];
                     const decalage = decalages[i % decalages.length];
                     if (codeAnonymat[i] === null && lettreReportee !== null && lettreReportee !== undefined && decalage !== undefined) {
-                        codeAnonymat[i] = inverserDecalage(lettreReportee, decalage, ALPHABET);
+                        codeAnonymat[i] = inverserDecalage(lettreReportee, radical ? decalage : -decalage, ALPHABET);
                     }
                 }
 
@@ -123,6 +132,14 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
                 if (!convocation) {
                     throw new ErreurResultatLu(`Code d'anonymat non reconnu.`, codeAnonymatFinal, noteLue ?? undefined);
                 }
+
+                if (convocation.noteQuart !== null && convocation.noteQuart !== noteLue) {
+                    throw new ErreurResultatLu("Code anonymat déjà lu.");
+                }
+
+                // Mettre à jour la convocation avec la note lue
+                convocation.noteQuart = noteLue;
+                await epreuve.convocations.update(codeAnonymatFinal, { note_quart: noteLue });
 
             } catch (error) {
                 // Erreur lors de la lecture du bordereau : faire remonter l'erreur

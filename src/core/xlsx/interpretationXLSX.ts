@@ -277,6 +277,8 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
 
             for (const [codeSalle, nbEtudiants] of salles) {
 
+                console.log(nbEtudiants);
+
                 // Créer les convocations sur la plage réservée
                 // 5% du nombre de convocations : Minimum 5 (ou nb. etudiants si < 5), maximum 20
                 const nbConvocsReservees = Math.min(20,

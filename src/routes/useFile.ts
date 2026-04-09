@@ -16,7 +16,7 @@ export function useFile(req: express.Request, res: express.Response, next: expre
         headers: req.headers,
         limits: {
             files: 1,
-            fileSize: 100 * 1024 * 1024, // Max 100MB
+            fileSize: 100 * 1024 * 1024 * 10, // Max 1000MB
         },
     });
 

@@ -19,7 +19,7 @@ export async function getIncidents(sessionId: string, codeEpreuve: string): Prom
         throw new ErreurRequeteInvalide("L'épreuve demandée n'existe pas.");
     }
 
-    const incidentsBruts = epreuve.incidents.values();
+    const incidentsBruts = await epreuve.incidents.getAll();
 
     const listeIncidents: APIIncident[] = [];
     for (const incident of incidentsBruts) {
