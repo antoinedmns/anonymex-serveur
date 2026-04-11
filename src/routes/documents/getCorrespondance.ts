@@ -7,6 +7,8 @@ import { ErreurRequeteInvalide } from "../erreursApi";
 export interface formatExport {
     code_anonymat: string,
     numero_etudiant: string
+    code_epreuve: string,
+    note: number | null
 }
 
 export async function getCorrespondance(sessionId: string, format: string, res: Response): Promise<void> {
@@ -38,10 +40,14 @@ export async function getCorrespondance(sessionId: string, format: string, res: 
         for (const convocation of totalConvocations) {
             const codeAnonymatExport = convocation.codeAnonymat;
             const numeroEtudiantExport = convocation.numeroEtudiant?.toString() ?? "";
+            const codeEpreuveExport = convocation.codeEpreuve;
+            const noteExport = convocation.noteQuart ? convocation.noteQuart / 4 : null;
 
             tableauExport.push({
                 code_anonymat: codeAnonymatExport,
                 numero_etudiant: numeroEtudiantExport,
+                code_epreuve: codeEpreuveExport,
+                note: noteExport
             });
 
         }
