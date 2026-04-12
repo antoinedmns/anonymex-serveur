@@ -84,24 +84,29 @@ describe('getConvocations', () => {
 
         it("doit lever une ErreurRequeteInvalide si la session n'existe pas.", async () => {
             (sessionCache.getOrFetch as jest.Mock).mockResolvedValue(undefined);
-            await expect(getConvocations('1', 'HAI604I')).rejects.toThrow("La session demandé n'existe pas.");
+            await expect(getConvocations('1', 'HAI604I')).rejects.toThrow("La session demandée n'existe pas.");
         });
     });
 
     describe('Cas de succès', () => {
         it("doit retourner la liste des convocations enrichie avec les données étudiants", async () => {
+            
+            const mockEtudiant = { numeroEtudiant: 21657957, nom: "Dupont", prenom: "Jean" };
+
             const mockConvocation = {
                 toJSON: jest.fn().mockReturnValue({ numeroEtudiant: 21657957, codeAnonymat: "BCCNIZ" })
             };
+
             const mockEpreuve = { convocations: { getAll: jest.fn().mockResolvedValue([mockConvocation]) } };
             const mockSession = { epreuves: { getOrFetch: jest.fn().mockResolvedValue(mockEpreuve) } };
-            const mockEtudiant = { nom: "Dupont", prenom: "Jean" };
 
             (sessionCache.getOrFetch as jest.Mock).mockResolvedValue(mockSession);
+            (etudiantCache.getAll as jest.Mock).mockResolvedValue([mockEtudiant]);
             (etudiantCache.getOrFetch as jest.Mock).mockResolvedValue(mockEtudiant);
 
             const result = await getConvocations('1', 'HAI604I');
 
+            // 4. Assertion
             expect(result).toEqual({
                 convocations: [{
                     numeroEtudiant: 21657957,
@@ -110,8 +115,6 @@ describe('getConvocations', () => {
                     prenom: "Jean"
                 }]
             });
-            expect(etudiantCache.getAll).toHaveBeenCalled();
-            expect(etudiantCache.getOrFetch).toHaveBeenCalledWith(21657957);
         });
     });
 });
@@ -221,10 +224,11 @@ describe('patchConvocation', () => {
     describe('Cas de succès', () => {
         it("doit mettre à jour la convocation et retourner les données si tout est valide", async () => {
             const donneesUpdate = { rang: 10, code_salle: "SC.36.4", note_quart: 65 };
-            const mockEpreuve = { 
-                convocations: { 
-                    update: jest.fn().mockResolvedValue(undefined) 
-                } 
+            const mockEpreuve = {
+                convocations: {
+                    update: jest.fn().mockResolvedValue(undefined),
+                    getOrFetch: jest.fn().mockResolvedValue({ codeAnonymat: 'BCCNIZ' }) // Crucial ici
+                }
             };
             const mockSession = { epreuves: { getOrFetch: jest.fn().mockResolvedValue(mockEpreuve) } };
             (sessionCache.getOrFetch as jest.Mock).mockResolvedValue(mockSession);

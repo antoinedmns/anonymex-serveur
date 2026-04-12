@@ -34,8 +34,8 @@ describe('deleteSession', () => {
 
             (sessionCache.delete as jest.Mock).mockResolvedValue({ affectedRows: 0 });
 
-            await expect(deleteSession('abc')).resolves.toEqual({ success: false });
-            await expect(deleteSession('')).resolves.toEqual({ success: false });
+            await expect(deleteSession('abc')).rejects.toThrow("L'id de la session est invalide.");
+            await expect(deleteSession('')).rejects.toThrow("L'id de la session est invalide.");
         });
     });
 
