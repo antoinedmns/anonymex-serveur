@@ -15,6 +15,11 @@ export async function patchEpreuve(sessionId: string, epreuveCode: string, data:
     if (!epreuve) throw new Error("L'épreuve passée n'existe pas.");
 
     const dataParsees = UpdateEpreuveSchema.parse(data);
+
+    if (dataParsees.nom !== undefined) epreuve.nom = dataParsees.nom;
+    if (dataParsees.duree !== undefined) epreuve.duree = dataParsees.duree;
+    if (dataParsees.date_epreuve !== undefined) epreuve.dateEpreuve = dataParsees.date_epreuve;
+
     await session.epreuves.update(epreuveCode, dataParsees);
 
     return dataParsees;

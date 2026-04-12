@@ -29,6 +29,17 @@ export async function patchConvocation(sessionId: string, epreuveCode: string, c
     }
 
     const dataParsees = UpdateConvocationSchema.parse(data);
+
+    const convocation = await epreuve.convocations.getOrFetch(codeAnonymat);
+    
+    if(!convocation) {
+        throw new ErreurRequeteInvalide("La convocation demandé n'existe pas.");
+    }
+
+    if (dataParsees.note_quart !== undefined) convocation.noteQuart = dataParsees.note_quart;
+    if (dataParsees.rang !== undefined) convocation.rang = dataParsees.rang;
+    if (dataParsees.code_salle !== undefined) convocation.codeSalle = dataParsees.code_salle;
+
     await epreuve.convocations.update(codeAnonymat, dataParsees);
 
     return dataParsees;
