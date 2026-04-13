@@ -32,9 +32,9 @@ export class ImagesImportsCache {
      */
     public static async getLogos(force = false) {
         const universite = await this.getImageImporte("logo_universite",
-            a => this.noirEtBlancTransfn(this.reduireTransfn(a, 400, 200)), force);
+            a => this.noirEtBlancTransfn(this.reduireTransfn(a, 140 * 1.7, 60 * 1.7)), force);
         const faculte = await this.getImageImporte("logo_faculte",
-            a => this.noirEtBlancTransfn(this.reduireTransfn(a, 400, 200)), force);
+            a => this.noirEtBlancTransfn(this.reduireTransfn(a, 140 * 1.7, 60 * 1.7)), force);
 
         return { universite, faculte };
     }

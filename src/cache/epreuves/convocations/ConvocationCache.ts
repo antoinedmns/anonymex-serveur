@@ -40,36 +40,47 @@ export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/,
     }
 
     /**
-     * Processer une convocation, pour la trier et la classer
-     * @param convoc 
+     * Reconstruire les caches dérivés (convocations supplémentaires, effectifs par salle).
      */
-    private processConvoc(convoc: Convocation): void {
-        if (convoc.codeAnonymat[0] === "Z") {
-            // Convo supplémentaire : la mettre dans la liste dédiée et ne pas la renvoyer dans le cache principal
-            this.convocationsSupplementaires.set(convoc.codeAnonymat, convoc);
+    public reconstruireCache(): void {
 
-            // Si aucun étudiant associé, alors ce n'est PAS une convo normale, on suppr du cache
-            if (convoc.numeroEtudiant === null) this.deleteDuCache(convoc.codeAnonymat);
-        }
+        this.effectifsSalle.clear();
+        this.salles.clear();
+        this.nbDepots = 0;
 
-        if (convoc.numeroEtudiant !== null) {
-            // Convo normale : compter le nombre de convocations par salle
-            const nbConvocsSalle = this.effectifsSalle.get(convoc.codeSalle) ?? 0;
-            this.effectifsSalle.set(convoc.codeSalle, nbConvocsSalle + 1);
-            this.salles.add(convoc.codeSalle);
+        for (const convoc of this.values()) {
 
-            if (convoc.noteQuart !== null) {
-                this.nbDepots += 1;
+            if (convoc.codeAnonymat[0] === "Z") {
+                // Convo supplémentaire : la mettre dans la liste dédiée et ne pas la renvoyer dans le cache principal
+                this.convocationsSupplementaires.set(convoc.codeAnonymat, convoc);
+
+                // Si aucun étudiant associé, alors ce n'est PAS une convo normale, on suppr du cache
+                if (convoc.numeroEtudiant === null) this.deleteDuCache(convoc.codeAnonymat);
             }
+
+            if (convoc.numeroEtudiant !== null) {
+                // Convo normale : compter le nombre de convocations par salle
+                const nbConvocsSalle = this.effectifsSalle.get(convoc.codeSalle) ?? 0;
+                this.effectifsSalle.set(convoc.codeSalle, nbConvocsSalle + 1);
+                this.salles.add(convoc.codeSalle);
+
+                if (convoc.noteQuart !== null) {
+                    this.nbDepots += 1;
+                }
+            }
+
         }
     }
 
+    /**
+     * Recupère les convocs non supplémentaires et reconstruit les caches dérivés.
+     * @param clause 
+     * @param force 
+     * @returns 
+     */
     override async getAll(clause?: string, force?: boolean): Promise<Convocation[]> {
-        const convocs = await super.getAll(clause, force);
-
-        for (const convoc of convocs) {
-            this.processConvoc(convoc);
-        }
+        await super.getAll(clause, force);
+        this.reconstruireCache();
 
         return this.values();
     }
@@ -79,11 +90,6 @@ export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/,
         this.convocationsSupplementaires.clear();
         this.effectifsSalle.clear();
         this.salles.clear();
-    }
-
-    override set(id: string, value: Convocation): void {
-        super.set(id, value);
-        this.processConvoc(value);
     }
 
     override delete(id: string): Promise<ResultSetHeader> {
@@ -109,29 +115,6 @@ export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/,
         return super.delete(id);
     }
 
-    override async insert(donnees: Partial<ConvocationData>, element?: Convocation): Promise<ResultSetHeader> {
-        const result = await super.insert(donnees, element);
-
-        if (element) {
-            this.processConvoc(element);
-        }
-
-        return result;
-    }
-
-    override async update(id: string, donnees: Partial<ConvocationData>): Promise<ResultSetHeader> {
-        const result = await super.update(id, donnees);
-
-        const convoc = this.get(id);
-        if (convoc) {
-            // Mettre à jour les propriétés de la convocation en cache
-            Object.assign(convoc, donnees);
-            this.processConvoc(convoc);
-        }
-
-        return result;
-    }
-
     fromDatabase(data: ConvocationData): Convocation {
         return new Convocation(data);
     }
@@ -144,6 +127,10 @@ export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/,
         const buffers: Buffer[] = [];
         for (const convoc of this.values()) {
             buffers.push(ConvocationCache.serialiseur.serialize(convoc.toData()));
+        }
+
+        for (const convocSupp of this.convocationsSupplementaires.values()) {
+            buffers.push(ConvocationCache.serialiseur.serialize(convocSupp.toData()));
         }
 
         return Buffer.concat(buffers);

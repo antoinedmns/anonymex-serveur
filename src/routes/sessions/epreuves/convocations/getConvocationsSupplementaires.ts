@@ -16,12 +16,12 @@ export async function getConvocationsSupplementaires(sessionId: string, epreuveC
 
     const session = await sessionCache.getOrFetch(idSession);
     if (!session) {
-        throw new ErreurRequeteInvalide("La session demandé n'existe pas.");
+        throw new ErreurRequeteInvalide("La session demandée n'existe pas.");
     }
 
     const epreuve = await session.epreuves.getOrFetch(epreuveCode);
     if (!epreuve) {
-        throw new ErreurRequeteInvalide("L'épreuve demandé n'existe pas.");
+        throw new ErreurRequeteInvalide("L'épreuve demandée n'existe pas.");
     }
 
     await epreuve.convocations.getAll();

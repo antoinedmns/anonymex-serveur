@@ -1,24 +1,24 @@
 import { ImagesImportsCache } from "../../../cache/ImagesImportsCache";
 
 /**
- * Will draw the header with the university and faculty logos on the given PDF document, centered.
+ * Rendu des logos en entête des documents PDF
  * @param doc 
  * @param height 
  * @param width 
  */
-export async function genererEnteteLogos(doc: PDFKit.PDFDocument): Promise<void> {
+export async function genererEnteteLogos(doc: PDFKit.PDFDocument, y?: number): Promise<void> {
 
     const { universite, faculte } = await ImagesImportsCache.getLogos();
-    const margeHaut = 35;
+    const margeHaut = y ?? 35;
     const gapLogos = 20;
 
     const noLogo = (x: number, y: number, nom: string) => {
-        doc.fillColor("#DDD").rect(x, y, 200, 60).fill();
-        doc.fillColor("#000").fontSize(13).text(`Aucun visuel pour ${nom}\nimporté via les paramètres\n(accueil > paramètres)`, x + 5, y + 5);
+        doc.fillColor("#DDD").rect(x, y, 140, 60).fill();
+        doc.fillColor("#000").fontSize(10).text(`Aucun visuel pour ${nom}\nimporté via les paramètres\n(accueil > paramètres)`, x + 5, y + 5);
     };
 
-    const univTaille = universite ? 140 : 200;
-    const facTaille = faculte ? 140 : 200;
+    const univTaille = 140;
+    const facTaille = 140;
     const totalTaille = univTaille + facTaille + gapLogos;
 
     doc.font("Helvetica-Oblique");

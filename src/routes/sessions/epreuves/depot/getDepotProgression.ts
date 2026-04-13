@@ -46,7 +46,6 @@ export async function getDepotProgression(req: Request, res: Response): Promise<
 
     // Gérer la fermeture de la connexion par le client
     req.on("close", () => {
-        console.log(`Client déconnecté de la progression du dépôt ${depotId}`);
         depot.callback = undefined;
         depot.onComplete = undefined;
     });

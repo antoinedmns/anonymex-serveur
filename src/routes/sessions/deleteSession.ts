@@ -9,10 +9,10 @@ import { ErreurRequeteInvalide } from "../erreursApi";
 export async function deleteSession(sessionId: string): Promise<APIBoolResponse> {
     const idSession = parseInt(sessionId ?? '');
 
-    if(isNaN(idSession) || sessionId === undefined) {
+    if (isNaN(idSession) || sessionId === undefined) {
         throw new ErreurRequeteInvalide("L'id de la session est invalide.");
     }
-    
+
     const suppressionSession = await sessionCache.delete(idSession);
 
     return {

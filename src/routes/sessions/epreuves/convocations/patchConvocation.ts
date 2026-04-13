@@ -31,8 +31,8 @@ export async function patchConvocation(sessionId: string, epreuveCode: string, c
     const dataParsees = UpdateConvocationSchema.parse(data);
 
     const convocation = await epreuve.convocations.getOrFetch(codeAnonymat);
-    
-    if(!convocation) {
+
+    if (!convocation) {
         throw new ErreurRequeteInvalide("La convocation demandé n'existe pas.");
     }
 
@@ -41,6 +41,9 @@ export async function patchConvocation(sessionId: string, epreuveCode: string, c
     if (dataParsees.code_salle !== undefined) convocation.codeSalle = dataParsees.code_salle;
 
     await epreuve.convocations.update(codeAnonymat, dataParsees);
+
+    // Reconstruire le cache des convocations de l'épreuve pour refléter les mises à jour
+    epreuve.convocations.reconstruireCache();
 
     return dataParsees;
 }

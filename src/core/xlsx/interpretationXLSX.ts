@@ -85,12 +85,17 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
     // Trie aussi les codes sur la plage réservée (permet d'assigner des codes supplémentaires le jour de l'examen)
     const alphabet = config.codesAnonymat.alphabetCodeAnonymat;
     const maxCodesParEpreuve = Math.pow(alphabet.length, 3);
-    let indexCode = 0; // Indice du prochain code d'anonymat à attribuer, global pour éviter la prédictibilité
+    let indexCode = 100; // Indice du prochain code d'anonymat à attribuer, global pour éviter la prédictibilité
     const codes = {
         1: classerCodes(genererCodesHamming(maxCodesParEpreuve, 3, 1, alphabet)),
         2: classerCodes(genererCodesHamming(maxCodesParEpreuve, 3, 2, alphabet)),
         3: classerCodes(genererCodesHamming(maxCodesParEpreuve, 3, 3, alphabet)),
     }
+
+    // Pour les codes supplémentaires, on utilise uniquement les codes à distance 3
+    // afin de s'assurer que la création de nouveaux codes suppl. puisse se faire de façon
+    // prédictible et sans problème d'augmentation de la distance (car seuil max dépassé)
+    const codesReserves = codes[1].reserve;
 
     // En cas d'erreur, rollback la transaction
     try {
@@ -277,19 +282,17 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
 
             for (const [codeSalle, nbEtudiants] of salles) {
 
-                console.log(nbEtudiants);
-
                 // Créer les convocations sur la plage réservée
-                // 5% du nombre de convocations : Minimum 5 (ou nb. etudiants si < 5), maximum 20
+                // 5% du nombre de convocations : Minimum 4 (ou nb. etudiants si < 4), maximum 20
                 const nbConvocsReservees = Math.min(20,
                     Math.max(
-                        Math.min(5, nbEtudiants),
+                        Math.min(4, nbEtudiants),
                         Math.round(nbEtudiants * 0.05)
                     )
                 );
 
                 for (let i = 0; i < nbConvocsReservees; i++) {
-                    const codeAnonymat = codesDisponibles.reserve[indexCode++ % codesDisponibles.reserve.length];
+                    const codeAnonymat = codesReserves[indexCode++ % codesReserves.length];
                     if (codeAnonymat) newConvocations.push({
                         id_session: session.id,
                         code_epreuve: codeEpreuve,
@@ -326,6 +329,11 @@ export async function interpretationXLSX(data: Record<string, unknown>[], sessio
         }
         for (const salleData of newSalles) {
             salleCache.set(salleData.code_salle, salleCache.fromDatabase(salleData));
+        }
+
+        // Mettre à jour les caches de chaque épreuve
+        for (const epreuve of session.epreuves.values()) {
+            epreuve.convocations.reconstruireCache();
         }
 
         logInfo("XLSX", `Interprétation XLSX de la session ${session.id} terminée en ${Date.now() - debut} ms.`);

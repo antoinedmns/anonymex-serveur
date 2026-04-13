@@ -18,7 +18,7 @@ export async function postIncident(sessionId: string, codeEpreuve: string, incid
     const session = await sessionCache.getOrFetch(idSession);
     if (session === undefined) throw new ErreurRequeteInvalide("La session demandée n'existe pas.");
 
-    const epreuve = session.epreuves.get(codeEpreuve);
+    const epreuve = await session.epreuves.getOrFetch(codeEpreuve);
     if (epreuve === undefined) throw new ErreurRequeteInvalide("L'épreuve demandée n'existe pas.");
 
     const incident = await epreuve.incidents.getOrFetch(idIncident);
@@ -78,6 +78,9 @@ export async function postIncident(sessionId: string, codeEpreuve: string, incid
     convocation.noteQuart = quartNote;
     await epreuve.convocations.update(convocation.codeAnonymat, { note_quart: convocation.noteQuart });
     await epreuve.incidents.delete(idIncident);
+
+    // Reconstruire le cache des convocations de l'épreuve pour refléter les mises à jour
+    epreuve.convocations.reconstruireCache();
 
     return {
         success: true

@@ -59,5 +59,8 @@ export async function patchConvocationSupplementaire(sessionId: string, epreuveC
     epreuve.convocations.set(codeAnonymat, nouvelleConvoc);
     const nouvelleAssignation = await epreuve.convocations.update(codeAnonymat, { numero_etudiant: numeroEtudiant });
 
+    // Reconstruire le cache des convocations de l'épreuve pour refléter les mises à jour
+    epreuve.convocations.reconstruireCache();
+
     return { success: nouvelleAssignation.affectedRows > 0 };
 }

@@ -18,13 +18,9 @@ export async function getEpreuves(sessionId: string): Promise<APIListEpreuves> {
         throw new ErreurRequeteInvalide("La session demandée n'existe pas.");
     }
 
-    const epreuvesBrutes = await session.epreuves.getAll();
+    await session.epreuves.getAll();
 
-    if (epreuvesBrutes === undefined) {
-        throw new ErreurRequeteInvalide("Impossible de récupérer les épreuves de la session demandée.");
-    }
-
-    const now = Date.now();
+    const now = Date.now() / 1000;
     const epreuvesAvenir: APIEpreuve[] = [];
     const epreuvesPassees: APIEpreuve[] = [];
 
@@ -32,7 +28,7 @@ export async function getEpreuves(sessionId: string): Promise<APIListEpreuves> {
     // Afin de refléter les changements dans la base de données
     const epereuvesChangees: Epreuve[] = [];
 
-    for (const epreuve of epreuvesBrutes) {
+    for (const epreuve of session.epreuves.values()) {
         const epreuveFormatee = epreuve.toJSON();
 
         if (epreuve.dateEpreuve >= now) {

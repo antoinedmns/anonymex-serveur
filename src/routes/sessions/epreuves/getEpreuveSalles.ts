@@ -15,6 +15,8 @@ export async function getEpreuveSalles(sessionId: string, epreuveCode: string): 
         throw new ErreurRequeteInvalide("La session demandée n'existe pas.");
     }
 
+    await session.epreuves.getAll();
+
     const epreuve = await session.epreuves.getOrFetch(epreuveCode);
 
     if (epreuve === undefined) {

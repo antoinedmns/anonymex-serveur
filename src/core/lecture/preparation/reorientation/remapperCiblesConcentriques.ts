@@ -50,7 +50,6 @@ export function remapperCiblesConcentriques(detections: (null | CibleConcentriqu
                 throw new ErreurAlignement("Angle de rotation non supporté pour le remapping des détections.");
         }
 
-        console.log('remapped coin ', detection.coin, '->', newCoin, ' (rings: ', detection.rings, ')');
         remappedDetections[newCoin] = { ...detection, coin: newCoin as 0 | 1 | 2 | 3, centre: newCentre };
     }
 

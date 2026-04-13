@@ -191,6 +191,9 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
                 getDepot().callback?.('progress', 0, { n: numFichier, t: scan.nbPages });
             }
         });
+
+        // Reconstruire le cache des convocations de l'épreuve pour refléter les mises à jour
+        epreuve.convocations.reconstruireCache();
     }
 
     // Envoi du message de fin de lecture

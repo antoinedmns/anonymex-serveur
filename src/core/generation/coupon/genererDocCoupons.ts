@@ -6,137 +6,66 @@ import { Session } from '../../../cache/sessions/Session';
 import 'dayjs/locale/fr';
 import { etudiantCache } from '../../../cache/etudiants/EtudiantCache';
 import { Convocation } from '../../../cache/epreuves/convocations/Convocation';
+import { renduFeuilleSalle } from './renduFeuilleSalle';
+import { salleCache } from '../../../cache/salles/SalleCache';
+import { renduPlancheCodesSupplementaires } from './renduPlancheCodesSupplementaires';
+import { renduCoupon } from './renduCoupon';
 
 /**
  * Génère (et stream dans la response) le matériel d'examen pour une épreuve (coupons et planches des codes supplémentaires)
  * @returns true si la génération s'est correctement déroulée
  */
-export async function genererDocCoupons(session: Session, epreuve: Epreuve, res: Response): Promise<boolean> {
+export async function genererDocCoupons(session: Session, epreuve: Epreuve, salles: string[], res: Response): Promise<boolean> {
 
     const doc = new PDFDocument({
         size: "A4",
-        autoFirstPage: true,
+        autoFirstPage: false,
         margins: { top: 0, bottom: 0, left: 0, right: 0 }
     });
 
     doc.pipe(res);
 
-    // Mettre tous les étudiants en cache
+    // Mettre à jour les caches
     await etudiantCache.getAll();
+    await salleCache.getAll();
+    const convocs = await epreuve.convocations.getAll();
 
-    const couponsParPage = 10;
-
-    // Mapping salle -> convocations
-    const convocations = await epreuve.convocations.getAll();
-    //epreuve.convocations.effectifsSalle
+    // Mapping des convocations par salle
     const convocsSalles = new Map<string, Convocation[]>();
-    for (const convocation of convocations) {
-        if (!convocsSalles.has(convocation.codeSalle)) convocsSalles.set(convocation.codeSalle, []);
-        convocsSalles.get(convocation.codeSalle)?.push(convocation);
+    const convocsSupp = new Map<string, Convocation[]>();
+
+    for (const convocation of convocs) {
+        const c = convocsSalles.get(convocation.codeSalle);
+        if (!c) convocsSalles.set(convocation.codeSalle, [convocation]);
+        else c.push(convocation);
     }
 
-    // Dimensions coupon
-    const hauteurCoupon = doc.page.height / (couponsParPage / 2);
-    const largeurCoupon = doc.page.width / 2;
+    for (const convocSupp of epreuve.convocations.convocationsSupplementaires.values()) {
+        const c = convocsSupp.get(convocSupp.codeSalle);
+        if (!c) convocsSupp.set(convocSupp.codeSalle, [convocSupp]);
+        else c.push(convocSupp);
+    }
 
-    function genererCoupon(convocation: Convocation, date: string, x: number, y: number): void {
+    // Générer les pages de coupons
+    for (const [codeSalle, convocs] of convocsSalles.entries()) {
+        if (!salles.includes(codeSalle) && salles.length > 0) continue; // ne générer que pour les salles demandées
+        const salle = salleCache.get(codeSalle);
+        const convocsSupplementaires = convocsSupp.get(codeSalle) ?? [];
 
-        // Entête : DATE + CODE EPREUVE / "Coupon à conserver" + Nom UE / Salle + Rang
-        const hauteurEntete = hauteurCoupon * 0.2;
-        /* date  */ doc.fontSize(10)
-            .font('Helvetica').fillColor('#222').text(date, x + 7, y + 7);
+        // Générer page de séparation/présentation
+        await renduFeuilleSalle(doc, epreuve, convocs.length, convocsSupplementaires.length, codeSalle);
 
-        /* code  */ doc.fontSize(10)
-            .text(epreuve.codeEpreuve, x + 7, y + hauteurEntete - 14);
+        // Générer la planche de codes supplémentaires pour la salle
+        renduPlancheCodesSupplementaires(doc, epreuve, codeSalle, convocsSupplementaires);
 
-        /* texte */ doc.fontSize(11).font('Helvetica-Bold')
-            .text("Coupon à conserver", x, y + 7, { align: 'center', width: largeurCoupon });
-
-        /* UE    */ doc.fontSize(9).font('Helvetica')
-            .text(epreuve.nom, x + largeurCoupon / 4, y + 20, { align: 'center', width: largeurCoupon - largeurCoupon / 2, ellipsis: true, height: 12 });
-
-        /* salle  */ doc.fontSize(10)
-            .text(convocation.codeSalle, x, y + 7, { align: 'right', width: largeurCoupon - 7 });
-
-        /* rang   */ doc.fontSize(10)
-            .text(convocation.rang ? `Rang ${convocation.rang}` : "", x, y + hauteurEntete - 14, { align: 'right', width: largeurCoupon - 7 });
-
-        doc.moveTo(x, y + hauteurEntete).lineTo(x + largeurCoupon, y + hauteurEntete).stroke();
-
-        // Corps : Nom \ Prénom \ N° étudiant
-        if (convocation.numeroEtudiant === null) {
-            // code réservé ?
-        } else {
-
-            const etudiant = etudiantCache.get(convocation.numeroEtudiant);
-            doc.fontSize(13).font('Helvetica-Bold').fillColor('#222')
-                .text(etudiant?.nom.toLocaleUpperCase('fr') || "???", x + 10, y + hauteurEntete + 20,
-                    { width: largeurCoupon - 20, align: 'center', ellipsis: true, height: 15 });
-
-            doc.fontSize(12).font('Helvetica')
-                .text(etudiant?.prenom || "???", x + 10, y + hauteurEntete + 37,
-                    { width: largeurCoupon - 20, align: 'center', ellipsis: true, height: 15 });
-
-            const numeroEtudiant = `N° étudiant : ${convocation.numeroEtudiant}`;
-            const xNumeroEtudiant = x + 15;
-            const yNumeroEtudiant = y + hauteurEntete + 12;
-            doc.save();
-            doc.fontSize(10).fillColor('#666').font('Helvetica-Oblique');
-            doc.rotate(90, { origin: [xNumeroEtudiant, yNumeroEtudiant] });
-            doc.text(numeroEtudiant, xNumeroEtudiant, yNumeroEtudiant,
-                { width: hauteurCoupon - hauteurEntete - 24, align: 'center', ellipsis: true, height: 15 });
-            doc.restore();
-
+        // Générer les coupons pour les convocations
+        for (const convocation of convocs) {
+            await renduCoupon(doc, epreuve, convocation, salle);
         }
 
-        // Cadre: Code d'anonymat
-        doc.fillColor('#222').rect(x + 80, y + hauteurCoupon - 66, largeurCoupon - 160, 45)
-            .lineWidth(0.5)
-            .strokeColor('black')
-            .stroke();
-
-        doc.fontSize(10).font('Helvetica');
-        const texte = "Code d'anonymat";
-        const largeurTexte = doc.widthOfString(texte);
-
-        doc.rect(x + largeurCoupon / 2 - largeurTexte / 2 - 5, y + hauteurCoupon - 70, largeurTexte + 10, 20).fillColor('white').fill();
-        doc.fillColor('black').text(texte, x + largeurCoupon / 2 - largeurTexte / 2, y + hauteurCoupon - 70);
-
-        // Code d'anonymat
-        doc.fontSize(18).font('Helvetica-Bold').fillColor('#111')
-            .text(convocation.codeAnonymat, x + 3, y + hauteurCoupon - 50, { width: largeurCoupon, align: 'center', characterSpacing: 7, lineBreak: false });
-
-    }
-
-    // Chaque salle est séparée par une page d'identification
-    let premiereSalle = true;
-    for (const [salle, convocs] of convocsSalles) {
-        if (convocs.length === 0) continue;
-        const convocsTriees = convocs.sort((a, b) => (a.rang ?? 0) - (b.rang ?? 0));
-
-        if (!premiereSalle) {
-            doc.addPage();
-        } else premiereSalle = false;
-
-
-        // Tracer coupons
-        for (let i = 0; i < convocsTriees.length; i++) {
-            if (i % couponsParPage === 0) {
-                doc.addPage();
-
-                // Tracer les lignes de séparation des coupons
-                for (let j = 1; j < couponsParPage / 2; j++) {
-                    const yLigne = j * hauteurCoupon;
-                    doc.moveTo(0, yLigne).lineTo(doc.page.width, yLigne).stroke();
-                }
-                doc.moveTo(largeurCoupon, 0).lineTo(largeurCoupon, doc.page.height).stroke();
-            }
-            const convocation = convocsTriees[i];
-            if (!convocation) continue;
-            const x = (i % 2) * largeurCoupon;
-            const y = Math.floor((i % couponsParPage) / 2) * hauteurCoupon;
-            convocation.rang = i + 1;
-            //genererCoupon(convocation, dateEpreuve.format('DD/MM/YYYY'), x, y);
+        // Générer les coupons pour les convocations supplémentaires
+        for (const convocSupp of convocsSupplementaires) {
+            await renduCoupon(doc, epreuve, convocSupp, salle);
         }
     }
 

@@ -74,6 +74,7 @@ export class EpreuveCache extends DatabaseCacheBase<string /*code*/, Epreuve, Ep
 
         // Marquer les données comme synchronisées
         for (const epreuve of res) {
+            epreuve.convocations.reconstruireCache();
             epreuve.incidents['tousRecuperes'] = true;
             epreuve.convocations['tousRecuperes'] = true;
         }
