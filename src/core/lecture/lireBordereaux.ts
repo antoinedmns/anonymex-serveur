@@ -138,8 +138,10 @@ export async function lireBordereaux(fichiers: Fichier[], getDepot: () => Depot)
                 }
 
                 // Mettre à jour la convocation avec la note lue
-                convocation.noteQuart = noteLue;
-                await epreuve.convocations.update(codeAnonymatFinal, { note_quart: noteLue });
+                if (noteLue !== null) {
+                    convocation.noteQuart = noteLue * 4;
+                    await epreuve.convocations.update(codeAnonymatFinal, { note_quart: noteLue * 4 });
+                }
 
             } catch (error) {
                 // Erreur lors de la lecture du bordereau : faire remonter l'erreur

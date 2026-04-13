@@ -1,14 +1,10 @@
 import { APIUpdateConvocation, UpdateConvocationSchema } from "../../../../contracts/convocations";
 import { sessionCache } from "../../../../cache/sessions/SessionCache";
-import { ErreurRequeteInvalide, ErreurServeur } from "../../../erreursApi";
+import { ErreurRequeteInvalide } from "../../../erreursApi";
 
 export async function patchConvocation(sessionId: string, epreuveCode: string, codeAnonymat: string, data: Record<string, unknown>): Promise<APIUpdateConvocation> {
 
     const idSession = parseInt(sessionId ?? '');
-
-    if (codeAnonymat.startsWith('Z')) {
-        throw new ErreurServeur("Vous ne pouvez pas modifier ce code anonymat.");
-    }
 
     if (isNaN(idSession) || sessionId === undefined) {
         throw new ErreurRequeteInvalide("L'ID de la session est invalide.");
@@ -20,12 +16,12 @@ export async function patchConvocation(sessionId: string, epreuveCode: string, c
 
     const session = await sessionCache.getOrFetch(idSession);
     if (!session) {
-        throw new ErreurRequeteInvalide("La session demandé n'existe pas.");
+        throw new ErreurRequeteInvalide("La session demandée n'existe pas.");
     }
 
     const epreuve = await session.epreuves.getOrFetch(epreuveCode);
     if (!epreuve) {
-        throw new ErreurRequeteInvalide("L'épreuve demandé n'existe pas.");
+        throw new ErreurRequeteInvalide("L'épreuve demandée n'existe pas.");
     }
 
     const dataParsees = UpdateConvocationSchema.parse(data);
@@ -33,7 +29,11 @@ export async function patchConvocation(sessionId: string, epreuveCode: string, c
     const convocation = await epreuve.convocations.getOrFetch(codeAnonymat);
 
     if (!convocation) {
-        throw new ErreurRequeteInvalide("La convocation demandé n'existe pas.");
+        throw new ErreurRequeteInvalide("La convocation demandée n'existe pas.");
+    }
+
+    if(convocation.numeroEtudiant === null) {
+        throw new ErreurRequeteInvalide("Vous ne pouvez pas modifier cette convocation.");
     }
 
     if (dataParsees.note_quart !== undefined) convocation.noteQuart = dataParsees.note_quart;
