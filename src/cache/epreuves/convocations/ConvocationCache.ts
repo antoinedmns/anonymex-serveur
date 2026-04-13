@@ -55,10 +55,10 @@ export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/,
                 this.convocationsSupplementaires.set(convoc.codeAnonymat, convoc);
 
                 // Si aucun étudiant associé, alors ce n'est PAS une convo normale, on suppr du cache
-                if (convoc.numeroEtudiant === null) this.deleteDuCache(convoc.codeAnonymat);
+                if (convoc.numeroEtudiant === null && convoc.noteQuart === null) this.deleteDuCache(convoc.codeAnonymat);
             }
 
-            if (convoc.numeroEtudiant !== null) {
+            if (convoc.numeroEtudiant !== null || convoc.noteQuart !== null) {
                 // Convo normale : compter le nombre de convocations par salle
                 const nbConvocsSalle = this.effectifsSalle.get(convoc.codeSalle) ?? 0;
                 this.effectifsSalle.set(convoc.codeSalle, nbConvocsSalle + 1);
@@ -96,7 +96,7 @@ export class ConvocationCache extends DatabaseCacheBase<string /*codeAnonymat*/,
         const convoc = this.get(id);
         if (convoc) {
             // Si la convocation supprimée est une convocation normale, décrémenter le nombre de convocations dans la salle
-            if (convoc.numeroEtudiant !== null) {
+            if (convoc.numeroEtudiant !== null || convoc.noteQuart !== null) {
                 const nbConvocsSalle = this.effectifsSalle.get(convoc.codeSalle) ?? 0;
                 if (nbConvocsSalle > 0) this.effectifsSalle.set(convoc.codeSalle, nbConvocsSalle - 1);
             }

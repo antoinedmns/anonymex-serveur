@@ -221,6 +221,7 @@ export async function getBordereauTemp(sessionId: string, codeEpreuve: string, n
     });
 
     doc.pipe(res);
+    await session.epreuves.getAll();
     const convocs = await epreuve.convocations.getAll();
 
     // générer n numéros de pages sur lesquels creer un incident aleatoirement
