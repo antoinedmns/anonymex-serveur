@@ -3,7 +3,7 @@ import path from "path";
 import PDFDocument from 'pdfkit';
 import sharp from "sharp";
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { createCanvas, CanvasRenderingContext2D as NodeCanvasRenderingContext2D } from 'canvas';
+import { createCanvas, CanvasRenderingContext2D as NodeCanvasRenderingContext2D, DOMMatrix, Image, ImageData } from 'canvas';
 import { Path2D, applyPath2DToCanvasRenderingContext } from 'path2d';
 import { genererPageBordereau } from "../../core/generation/bordereau/genererBordereau";
 import { sessionCache } from "../../cache/sessions/SessionCache";
@@ -15,6 +15,39 @@ const A4_HEIGHT_POINTS = 841.89;
 const RASTER_SCALE = 2;
 const PDFJS_STANDARD_FONT_DATA_URL = `${path.resolve(process.cwd(), "node_modules/pdfjs-dist/standard_fonts")}${path.sep}`;
 let canvasPath2DPatched = false;
+let canvasGlobalsPatched = false;
+
+type NodeCanvas = ReturnType<typeof createCanvas>;
+interface CanvasAndContext {
+    canvas: NodeCanvas;
+    context: NodeCanvasRenderingContext2D;
+}
+
+class NodeCanvasFactoryCompat {
+    create(width: number, height: number): CanvasAndContext {
+        if (width <= 0 || height <= 0) {
+            throw new Error('Largeur/hauteur de canvas invalides pour le rendu PDF.');
+        }
+
+        const canvas = createCanvas(Math.ceil(width), Math.ceil(height));
+        const context = canvas.getContext('2d');
+        return { canvas, context };
+    }
+
+    reset(canvasAndContext: CanvasAndContext, width: number, height: number): void {
+        if (width <= 0 || height <= 0) {
+            throw new Error('Largeur/hauteur de canvas invalides pour le rendu PDF.');
+        }
+
+        canvasAndContext.canvas.width = Math.ceil(width);
+        canvasAndContext.canvas.height = Math.ceil(height);
+    }
+
+    destroy(canvasAndContext: CanvasAndContext): void {
+        canvasAndContext.canvas.width = 0;
+        canvasAndContext.canvas.height = 0;
+    }
+}
 
 function ensureCanvasPath2DSupport(): void {
     if (canvasPath2DPatched) {
@@ -24,6 +57,30 @@ function ensureCanvasPath2DSupport(): void {
     applyPath2DToCanvasRenderingContext(NodeCanvasRenderingContext2D as unknown as never);
     (globalThis as unknown as { Path2D: typeof Path2D }).Path2D = Path2D;
     canvasPath2DPatched = true;
+}
+
+function ensureCanvasGlobalsSupport(): void {
+    if (canvasGlobalsPatched) {
+        return;
+    }
+
+    const globals = globalThis as unknown as {
+        DOMMatrix?: typeof DOMMatrix;
+        Image?: typeof Image;
+        ImageData?: typeof ImageData;
+    };
+
+    if (!globals.DOMMatrix) {
+        globals.DOMMatrix = DOMMatrix;
+    }
+    if (!globals.Image) {
+        globals.Image = Image;
+    }
+    if (!globals.ImageData) {
+        globals.ImageData = ImageData;
+    }
+
+    canvasGlobalsPatched = true;
 }
 
 function remplirDonneesBordereau(doc: PDFKit.PDFDocument, codeAnonymat: string, incident: boolean): void {
@@ -78,10 +135,12 @@ function getRotationDeg(pageIndex: number): number {
 
 async function rendrePdfEnPng(pagePdfBuffer: Buffer): Promise<Buffer> {
     ensureCanvasPath2DSupport();
+    ensureCanvasGlobalsSupport();
 
     const loadingTask = getDocument({
         data: new Uint8Array(pagePdfBuffer),
         standardFontDataUrl: PDFJS_STANDARD_FONT_DATA_URL,
+        CanvasFactory: NodeCanvasFactoryCompat,
     });
     const pdf = await loadingTask.promise;
 
@@ -90,11 +149,9 @@ async function rendrePdfEnPng(pagePdfBuffer: Buffer): Promise<Buffer> {
         const viewport = page.getViewport({ scale: RASTER_SCALE });
 
         const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
-        const context = canvas.getContext('2d');
 
         await page.render({
             canvas: canvas as unknown as HTMLCanvasElement,
-            canvasContext: context as unknown as CanvasRenderingContext2D,
             viewport
         }).promise;
 
@@ -115,7 +172,9 @@ async function genererImagePageBordereau(codeAnonymat: string, incident: boolean
     remplirDonneesBordereau(docTemp, codeAnonymat, incident);
 
     const pagePdfBuffer = await pdfDocumentToBuffer(docTemp);
+    console.log('ok rendu pdf');
     const pagePngBuffer = await rendrePdfEnPng(pagePdfBuffer);
+    console.log('ok rendu png');
     const rotation = getRotationDeg(pageIndex);
 
     return sharp(pagePngBuffer)
@@ -180,11 +239,13 @@ export async function getBordereauTemp(sessionId: string, codeEpreuve: string, n
         const imagePage = await genererImagePageBordereau(convoc.codeAnonymat, incident, il);
 
         doc.addPage();
-        doc.image(imagePage, 0, 0, {
-            width: doc.page.width,
-            height: doc.page.height
-        });
-
+        if (imagePage.length > 0) {
+            console.log(imagePage)
+            doc.image(imagePage, 0, 0, {
+                width: doc.page.width,
+                height: doc.page.height
+            });
+        }
         il++;
     }
 
