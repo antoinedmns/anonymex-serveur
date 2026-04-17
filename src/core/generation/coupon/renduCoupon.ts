@@ -157,7 +157,7 @@ export async function renduCoupon(doc: typeof PDFDocument, epreuve: Epreuve, con
 
     }
 
-    // COLONNE DROITE : Ne pas faire
+    // COLONNE DROITE : Instructions
     {
 
         const margesLaterales = 45;
