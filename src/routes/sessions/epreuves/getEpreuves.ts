@@ -29,6 +29,8 @@ export async function getEpreuves(sessionId: string): Promise<APIListEpreuves> {
     const epereuvesChangees: Epreuve[] = [];
 
     for (const epreuve of session.epreuves.values()) {
+        await epreuve.incidents.getAll();
+        await epreuve.convocations.getAll();
         const epreuveFormatee = epreuve.toJSON();
 
         if (epreuve.dateEpreuve >= now) {
