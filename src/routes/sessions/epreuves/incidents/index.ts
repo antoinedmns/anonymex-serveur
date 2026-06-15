@@ -5,6 +5,7 @@ import { getIncidents } from "./getIncidents";
 import { postIncident } from "./postIncident";
 import { getSuggestions } from "./getSuggestions";
 import { deleteIncident } from "./deleteIncident";
+import { deleteIncidents } from "./deleteIncidents";
 
 const incidentsRouter = Router({ mergeParams: true });
 
@@ -27,5 +28,9 @@ incidentsRouter.post<{ session: string, code: string, id: string }>("/:id", (req
 // DELETE /sessions/:session/epreuves/:code/incidents/:id
 incidentsRouter.delete<{ session: string, code: string, id: string }>("/:id", (req, res) =>
     useRest(() => deleteIncident(req.params.session, req.params.code, req.params.id), req, res));
+
+// DELETE /sessions/:session/epreuves/:code/incidents/
+incidentsRouter.delete<{ session: string, code: string }>("/", (req, res) =>
+    useRest(() => deleteIncidents(req.params.session, req.params.code), req, res));
 
 export { incidentsRouter };
